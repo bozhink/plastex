@@ -54,3 +54,7 @@ docs/_build/
 target/
 *.project
 *.pydevproject
+.idea/misc.xml
+.idea/modules.xml
+.idea/plastex.iml
+.idea/workspace.xml
