@@ -6,12 +6,14 @@ using the OS X CoreGraphics library.
 
 """
 
-import sys, os
+import os
+import sys
 from optparse import OptionParser
+
 try:
     import CoreGraphics as CG
 except ImportError:
-    print 'ERROR: cgpdfpng will not run on this platform' 
+    print 'ERROR: cgpdfpng will not run on this platform'
     sys.exit(1)
 
 __version__ = '0.1'
@@ -41,17 +43,17 @@ if not os.path.isfile(inputfile):
 print 'cgpdfpng %s' % __version__
 
 pdf = CG.CGPDFDocumentCreateWithProvider(
-          CG.CGDataProviderCreateWithFilename(inputfile))
+    CG.CGDataProviderCreateWithFilename(inputfile))
 
 # Determine output filenames
 output = options.output
 if output is None:
-    ext = '.png' 
+    ext = '.png'
     if pdf.getNumberOfPages() > 1:
-        ext = '%d.png' 
+        ext = '%d.png'
     output = os.path.splitext(inputfile)[0] + ext
 
-for pageNumber in xrange(1, pdf.getNumberOfPages()+1):
+for pageNumber in xrange(1, pdf.getNumberOfPages() + 1):
     if pdf.getNumberOfPages() > 1:
         filename = output % pageNumber
     else:
@@ -65,8 +67,8 @@ for pageNumber in xrange(1, pdf.getNumberOfPages()+1):
     size.height = float(options.magnification) * size.height
 
     # Create new image from page
-    ctx = CG.CGBitmapContextCreateWithColor(int(size.width), int(size.height), 
-                                 CG.CGColorSpaceCreateDeviceRGB(), (1,1,1,1))
+    ctx = CG.CGBitmapContextCreateWithColor(int(size.width), int(size.height),
+                                            CG.CGColorSpaceCreateDeviceRGB(), (1, 1, 1, 1))
     ctx.setShouldAntialias(True)
     ctx.setShouldSmoothFonts(True)
     ctx.drawPDFDocument(box, pdf, pageNumber)
@@ -79,7 +81,7 @@ for pageNumber in xrange(1, pdf.getNumberOfPages()+1):
     h = int(size.height / float(options.scaledown))
 
     # Create new imoge
-    c = CG.CGBitmapContextCreateWithColor(w, h, CG.CGColorSpaceCreateDeviceRGB(), (1,1,1,1))
+    c = CG.CGBitmapContextCreateWithColor(w, h, CG.CGColorSpaceCreateDeviceRGB(), (1, 1, 1, 1))
     c.setShouldAntialias(True)
     c.setShouldSmoothFonts(True)
     pageRect = CG.CGRectMake(0, 0, w, h)

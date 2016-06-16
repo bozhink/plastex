@@ -1,4 +1,3 @@
-
 mimetype = 'application/epub+zip'
 
 container = '''<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -134,5 +133,3 @@ ncx = '''<span tal:define="global mycounter python:1" tal:omit-tag="" >
   </ncx>
 </span>
 '''
-
-

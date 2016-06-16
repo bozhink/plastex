@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-import unittest, re
+import unittest
 from unittest import TestCase
+
 from plasTeX.TeX import TeX
-from plasTeX import Macro
 
 
 class Labels(TestCase):
-
     def testLabel(self):
         s = TeX()
         s.input(r'\section{hi\label{one}} text \section{bye\label{two}}')
@@ -29,4 +28,3 @@ class Labels(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

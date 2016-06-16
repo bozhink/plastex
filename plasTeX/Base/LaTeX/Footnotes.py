@@ -5,8 +5,7 @@ C.3.3 Footnotes (p172)
 
 """
 
-from plasTeX import Command, Environment, DimenCommand
-from plasTeX.Logging import getLogger
+from plasTeX import Command, DimenCommand
 
 
 class footnote(Command):
@@ -23,6 +22,7 @@ class footnote(Command):
         self.mark = self
         return output
 
+
 class footnotemark(Command):
     args = '[ num:int ]'
     mark = None
@@ -37,14 +37,16 @@ class footnotemark(Command):
         self.mark = self
         return output
 
+
 class footnotetext(footnote):
     args = '[ num:int ] self'
     mark = None
-    
+
     def invoke(self, tex):
         output = footnote.invoke(self, tex)
-        self.mark = self.ownerDocument.userdata.get('footnotemarks',[None]).pop(0)
+        self.mark = self.ownerDocument.userdata.get('footnotemarks', [None]).pop(0)
         return output
+
 
 #
 # Style Parameters
@@ -52,6 +54,7 @@ class footnotetext(footnote):
 
 class footnotesep(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class footnoterule(Command):
     pass

@@ -34,32 +34,35 @@ after
 
 """
 
-from plasTeX import Command, Environment
-from plasTeX.DOM import Text
-from plasTeX.Base.LaTeX.Verbatim import verbatim
 from plasTeX.Base.LaTeX.Verbatim import verb
+from plasTeX.Base.LaTeX.Verbatim import verbatim
+from plasTeX.DOM import Text
+
 
 class HTML(verbatim):
     captionable = True
     blockType = False
-    
+
     def digest(self, tokens):
         verbatim.digest(self, tokens)
         self.unicode = Text(''.join(self))
         self.unicode.isMarkup = True
         return []
-    
+
+
 class XHTML(HTML):
     pass
-    
+
+
 class html(verb):
     args = ''
-    
+
     def digest(self, tokens):
         verb.digest(self, tokens)
         self.unicode = Text(''.join(self))
         self.unicode.isMarkup = True
         return []
-    
+
+
 class xhtml(html):
     pass

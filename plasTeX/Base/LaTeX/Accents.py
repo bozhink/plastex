@@ -5,9 +5,9 @@ C.3.4 Accents and Special Symbols (p173)
 
 """
 
-from plasTeX import Command, Environment
-from plasTeX.Logging import getLogger
+from plasTeX import Command
 from plasTeX.DOM import Node, Text
+
 
 #
 # Table 3.1: Accents
@@ -21,7 +21,7 @@ class Accent(Command):
     def unicode(self):
         return type(self).chars.get(self.textContent.strip(), None)
 
-    @property    
+    @property
     def textContent(self):
         """
         We need a customized textContent that doesn't look up 
@@ -39,7 +39,7 @@ class Accent(Command):
         if self.ownerDocument is not None:
             return self.ownerDocument.createTextNode(u''.join(output))
         else:
-            return Text(u''.join(output))        
+            return Text(u''.join(output))
 
 
 class Grave(Accent):
@@ -58,6 +58,7 @@ class Grave(Accent):
         'N': unichr(504),
         'n': unichr(505),
     }
+
 
 class Acute(Accent):
     macroName = "'"
@@ -90,6 +91,7 @@ class Acute(Accent):
         'g': unichr(501),
     }
 
+
 class Circumflex(Accent):
     macroName = '^'
     chars = {
@@ -120,6 +122,7 @@ class Circumflex(Accent):
         '': '^',
     }
 
+
 class Umlaut(Accent):
     macroName = '"'
     chars = {
@@ -137,6 +140,7 @@ class Umlaut(Accent):
         'Y': unichr(376),
     }
 
+
 class Tilde(Accent):
     macroName = '~'
     chars = {
@@ -151,6 +155,7 @@ class Tilde(Accent):
         'U': unichr(360),
         'u': unichr(361),
     }
+
 
 class Macron(Accent):
     macroName = '='
@@ -168,6 +173,7 @@ class Macron(Accent):
         'Y': unichr(562),
         'y': unichr(563),
     }
+
 
 class Dot(Accent):
     macroName = '.'
@@ -213,6 +219,7 @@ class Dot(Accent):
         'y': unichr(7823),
     }
 
+
 class u(Accent):
     chars = {
         'A': unichr(258),
@@ -228,6 +235,7 @@ class u(Accent):
         'U': unichr(364),
         'u': unichr(365),
     }
+
 
 class v(Accent):
     chars = {
@@ -266,6 +274,7 @@ class v(Accent):
         'h': unichr(543),
     }
 
+
 class H(Accent):
     chars = {
         'O': unichr(336),
@@ -274,8 +283,10 @@ class H(Accent):
         'u': unichr(369),
     }
 
+
 class t(Accent):
     chars = {}
+
 
 class c(Accent):
     chars = {
@@ -298,6 +309,7 @@ class c(Accent):
         'E': unichr(552),
         'e': unichr(553),
     }
+
 
 class d(Accent):
     chars = {
@@ -341,6 +353,7 @@ class d(Accent):
         'y': unichr(7925),
     }
 
+
 class b(Accent):
     chars = {
         'B': unichr(7686),
@@ -362,6 +375,7 @@ class b(Accent):
         'h': unichr(7830),
     }
 
+
 class k(Accent):
     chars = {
         'A': unichr(260),
@@ -376,8 +390,10 @@ class k(Accent):
         'o': unichr(491),
     }
 
+
 class r(Accent):
     chars = {}
+
 
 #
 # Table 3.2: Non-English Symbols (see Characters.py)
@@ -386,17 +402,18 @@ class r(Accent):
 class Symbol(Command):
     pass
 
-#class oe(Symbol): pass 
-#class OE(Symbol): pass
-#class ae(Symbol): pass
-#class AE(Symbol): pass
-#class aa(Symbol): pass
-#class AA(Symbol): pass
-#class o(Symbol): pass
-#class O(Symbol): pass
-#class l(Symbol): pass
-#class L(Symbol): pass
-#class ss(Symbol): pass
+
+# class oe(Symbol): pass
+# class OE(Symbol): pass
+# class ae(Symbol): pass
+# class AE(Symbol): pass
+# class aa(Symbol): pass
+# class AA(Symbol): pass
+# class o(Symbol): pass
+# class O(Symbol): pass
+# class l(Symbol): pass
+# class L(Symbol): pass
+# class ss(Symbol): pass
 # ?`
 # !`
 
@@ -408,17 +425,22 @@ class Symbol(Command):
 class dag(Symbol):
     unicode = unichr(8224)
 
+
 class ddag(Symbol):
     unicode = unichr(8225)
+
 
 class S(Symbol):
     unicode = unichr(167)
 
+
 class P(Symbol):
     unicode = unichr(182)
 
+
 class copyright(Symbol):
     unicode = unichr(169)
+
 
 class pounds(Symbol):
     unicode = unichr(163)

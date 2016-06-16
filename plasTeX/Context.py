@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 
-import new, os, ConfigParser, re, time, codecs
+import ConfigParser
+import codecs
+import new
+import os
+import re
+import time
+
 import plasTeX
-from plasTeX import ismacro, macroName
-from plasTeX.DOM import Node
-from plasTeX.Logging import getLogger
 from Tokenizer import Tokenizer, Token, DEFAULT_CATEGORIES, VERBATIM_CATEGORIES
+from plasTeX import ismacro, macroName
+from plasTeX.Logging import getLogger
 
 # Only export the Context singleton
 __all__ = ['Context']
@@ -37,7 +42,7 @@ class ContextItem(dict):
         return '{}'
 
     def __getitem__(self, key):
-        try: 
+        try:
             return dict.__getitem__(self, key)
         except KeyError:
             if self.parent is not None and self.parent is not self:
@@ -45,8 +50,10 @@ class ContextItem(dict):
             raise
 
     def get(self, key, default=None):
-        try: return self[key]
-        except KeyError: return default
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
     def has_key(self, key):
         if dict.has_key(self, key):
@@ -67,16 +74,16 @@ class ContextItem(dict):
 
     def __str__(self):
         if self.parent is not None:
-             return '%s -> %s' % (self.parent, self.name)
+            return '%s -> %s' % (self.parent, self.name)
         return self.name
 
 
 class Counters(dict):
     def __getitem__(self, name):
-        try: 
+        try:
             c = dict.__getitem__(self, name)
         except KeyError:
-#           log.warning('No counter "%s" exists.  Creating one.' % name)
+            #           log.warning('No counter "%s" exists.  Creating one.' % name)
             c = self[name] = plasTeX.Counter(self.context, name)
         return c
 
@@ -109,7 +116,7 @@ class LanguageParser(object):
         # the minor language section
         for key, value in self.data.items():
             if '-' in key:
-                major, minor = key.split('-',1)
+                major, minor = key.split('-', 1)
                 if major in self.data:
                     majordict = self.data[major]
                     for mkey, mvalue in majordict.items():
@@ -120,7 +127,7 @@ class LanguageParser(object):
         if name == 'terms':
             self.term = None
             if self.data.get(attrs['lang']):
-                self.language = self.data[attrs['lang']] 
+                self.language = self.data[attrs['lang']]
             else:
                 self.language = self.data[attrs['lang']] = {}
             if 'babel' in attrs:
@@ -128,11 +135,11 @@ class LanguageParser(object):
         elif name == 'term':
             self.term = attrs['name']
             self.language[self.term] = u''
-            
+
     def endElement(self, name):
         if name == 'term':
             self.term = None
-            
+
     def charData(self, data):
         if self.term:
             self.language[self.term] += data
@@ -204,14 +211,18 @@ class Context(object):
             if self._currenvir:
                 return self._currenvir[-1]
             return
+
         def fset(self, value):
             if value is None:
                 self._currenvir.pop()
             else:
                 self._currenvir.append(value)
+
         def fdel(self):
             self._currenvir.pop()
+
         return locals()
+
     currenvir = property(**currenvir())
 
     def persist(self, filename, rtype='none'):
@@ -230,19 +241,19 @@ class Context(object):
         import pickle
         if os.path.exists(filename):
             try:
-                d = pickle.load(open(filename,'rb'))
+                d = pickle.load(open(filename, 'rb'))
                 if rtype not in d:
                     d[rtype] = {}
             except:
                 os.remove(filename)
-                d = {rtype:{}}
+                d = {rtype: {}}
         else:
-            d = {rtype:{}}
+            d = {rtype: {}}
         data = d[rtype]
         for key, value in self.persistentLabels.items():
             data[key] = value.persist()
         try:
-            pickle.dump(d, open(filename,'wb'))
+            pickle.dump(d, open(filename, 'wb'))
         except Exception, msg:
             log.warning('Could not save auxiliary information. (%s)' % msg)
 
@@ -263,13 +274,15 @@ class Context(object):
         if not os.path.exists(filename):
             return
         try:
-            d = pickle.load(open(filename,'rb'))
-            try: data = d[rtype]
-            except KeyError: return
+            d = pickle.load(open(filename, 'rb'))
+            try:
+                data = d[rtype]
+            except KeyError:
+                return
             wou = self.warnOnUnrecognized
             self.warnOnUnrecognized = False
             for key, value in data.items():
-                n = self[value.get('macroName','Macro')]()
+                n = self[value.get('macroName', 'Macro')]()
                 n.restore(value)
                 self.labels[key] = n
             self.warnOnUnrecognized = wou
@@ -279,7 +292,7 @@ class Context(object):
     @property
     def isMathMode(self):
         """ Are we in math mode or not? """
-        for i in range(len(self.contexts)-1, -1, -1):
+        for i in range(len(self.contexts) - 1, -1, -1):
             obj = self.contexts[i].obj
             if obj is not None and obj.mathMode is not None:
                 return obj.mathMode
@@ -309,7 +322,7 @@ class Context(object):
             self.terms = self.languages[lang]
             for key, value in self.languages[lang].items():
                 if key == 'today':
-                    self.newcommand(key, definition=self._strftime(value))                
+                    self.newcommand(key, definition=self._strftime(value))
                 else:
                     self.newcommand('%sname' % key, definition=value)
         else:
@@ -326,7 +339,7 @@ class Context(object):
             elif day.endswith('3'):
                 suffix = 'rd'
             day = str(int(day))
-            return unicode(time.strftime(fmt.replace('%f', day+suffix).replace('%e', day)), 'utf8')
+            return unicode(time.strftime(fmt.replace('%f', day + suffix).replace('%e', day)), 'utf8')
         return unicode(time.strftime(fmt), 'utf8')
 
     def loadINIPackage(self, inifile):
@@ -338,29 +351,30 @@ class Context(object):
 
         """
         ini = ConfigParser.RawConfigParser()
-        if not isinstance(inifile, (list,tuple)):
+        if not isinstance(inifile, (list, tuple)):
             inifile = [inifile]
         for f in inifile:
             ini.read(f)
             macros = {}
             for section in ini.sections():
-                try: baseclass = self[section]
+                try:
+                    baseclass = self[section]
                 except KeyError:
                     log.warning('Could not find macro %s' % section)
                     continue
                 for name in ini.options(section):
-                    value = ini.get(section,name)
-                    m = re.match(r'^unicode\(\s*(?:(\'|\")(?P<string>.+)(?:\1)|(?P<number>\d+))\s*\)$',value)
+                    value = ini.get(section, name)
+                    m = re.match(r'^unicode\(\s*(?:(\'|\")(?P<string>.+)(?:\1)|(?P<number>\d+))\s*\)$', value)
                     if m:
                         data = m.groupdict()
                         if data['number'] is not None:
                             value = unichr(int(data['number']))
                         else:
                             value = unicode(data['string'])
-                        macros[name] = new.classobj(name, (baseclass,), 
+                        macros[name] = new.classobj(name, (baseclass,),
                                                     {'unicode': value})
-                        continue 
-                    macros[name] = new.classobj(name, (baseclass,), 
+                        continue
+                    macros[name] = new.classobj(name, (baseclass,),
                                                 {'args': value})
             self.importMacros(macros)
 
@@ -390,17 +404,17 @@ class Context(object):
         if self.packages.has_key(module):
             return True
 
-        packagesini = os.path.join(os.path.dirname(plasTeX.Packages.__file__), 
-                                   os.path.basename(module)+'.ini')
+        packagesini = os.path.join(os.path.dirname(plasTeX.Packages.__file__),
+                                   os.path.basename(module) + '.ini')
 
-        try: 
+        try:
             # Try to import a Python package by that name
             m = __import__(module, globals(), locals())
             status.info(' ( %s ' % m.__file__)
             if hasattr(m, 'ProcessOptions'):
                 m.ProcessOptions(options or {}, tex.ownerDocument)
             self.importMacros(vars(m))
-            moduleini = os.path.splitext(m.__file__)[0]+'.ini'
+            moduleini = os.path.splitext(m.__file__)[0] + '.ini'
             self.loadINIPackage([packagesini, moduleini])
             self.packages[module] = options
             status.info(' ) ')
@@ -411,7 +425,7 @@ class Context(object):
             if 'No module' in str(msg):
                 pass
                 # Failed to load Python package
-#               log.warning('No Python version of %s was found' % file)
+            #               log.warning('No Python version of %s was found' % file)
             # Error while importing
             else:
                 raise
@@ -419,11 +433,11 @@ class Context(object):
         result = tex.loadPackage(file, options)
         try:
             moduleini = os.path.join(os.path.dirname(tex.kpsewhich(file)),
-                                     os.path.basename(module)+'.ini')
+                                     os.path.basename(module) + '.ini')
             self.loadINIPackage([packagesini, moduleini])
-        except OSError: pass
+        except OSError:
+            pass
         return result
-   
 
     def label(self, label, node=None):
         """ 
@@ -451,7 +465,7 @@ class Context(object):
             self.persistentLabels[label] = self.labels[label] = node
             node.id = label
 
-        #print label, ''.join(self.currentlabel.ref[:])
+        # print label, ''.join(self.currentlabel.ref[:])
 
         # Resolve any outstanding references to this object
         if self.refs.has_key(label) and self.labels.has_key(label):
@@ -482,9 +496,9 @@ class Context(object):
         # Resolve ref if label already exists
         if self.labels.has_key(label):
             obj.idref[name] = self.labels[label]
-            return 
+            return
 
-        # If the label doesn't exist, store away the object for later
+            # If the label doesn't exist, store away the object for later
         if not self.refs.has_key(label):
             self.refs[label] = []
         self.refs[label].append(obj)
@@ -504,8 +518,10 @@ class Context(object):
         Returns: instance of requested macro
 
         """
-        try: return self.top[key]
-        except KeyError: pass
+        try:
+            return self.top[key]
+        except KeyError:
+            pass
 
         # Didn't find it, so generate a new class
         if self.warnOnUnrecognized and not self.isMathMode:
@@ -536,7 +552,7 @@ class Context(object):
         else:
             name = '{}'
             if context is not None:
-                name = context.nodeName 
+                name = context.nodeName
                 # If we hit a document element, make sure that we start
                 # at the global context.
                 if context.level == context.DOCUMENT_LEVEL:
@@ -588,10 +604,9 @@ class Context(object):
         newcontext.obj = obj
 
         if obj is not None:
-
             # Get the local category codes and macros
-#           if obj.categories is not None:
-#               newcontext.categories = obj.categories
+            #           if obj.categories is not None:
+            #               newcontext.categories = obj.categories
 
             newcontext.update(obj.locals())
 
@@ -608,8 +623,8 @@ class Context(object):
         for value in context.values():
             if ismacro(value):
                 self[macroName(value)] = value
-#           elif isinstance(value, Context):
-#               self.importMacros(value)
+                #           elif isinstance(value, Context):
+                #               self.importMacros(value)
 
     def pop(self, obj=None):
         """ 
@@ -621,7 +636,7 @@ class Context(object):
         Returns: ContextItem instance removed from stack
 
         """
-#       print 'POP', type(obj).__name__, self.contexts[-1]
+        #       print 'POP', type(obj).__name__, self.contexts[-1]
         if obj is None:
             # Pop until we hit a None in the context
             while len(self.contexts) > 1:
@@ -673,7 +688,7 @@ class Context(object):
 
         elif not ismacro(value):
             raise ValueError, \
-                  '"%s" does not implement the macro interface' % key
+                '"%s" does not implement the macro interface' % key
 
         self.contexts[0][macroName(value)] = value
 
@@ -698,7 +713,7 @@ class Context(object):
 
         elif not ismacro(value):
             raise ValueError, \
-                  '"%s" does not implement the macro interface' % key
+                '"%s" does not implement the macro interface' % key
 
         self.contexts[-1][macroName(value)] = value
 
@@ -722,17 +737,17 @@ class Context(object):
         if char in c[Token.CC_BGROUP]:
             return Token.CC_BGROUP
         if char in c[Token.CC_EGROUP]:
-            return Token.CC_EGROUP 
+            return Token.CC_EGROUP
         if char in c[Token.CC_ESCAPE]:
-            return Token.CC_ESCAPE 
+            return Token.CC_ESCAPE
         if char in c[Token.CC_SUPER]:
             return Token.CC_SUPER
         if char in c[Token.CC_SUB]:
-            return Token.CC_SUB 
+            return Token.CC_SUB
         if char in c[Token.CC_MATHSHIFT]:
             return Token.CC_MATHSHIFT
         if char in c[Token.CC_ALIGNMENT]:
-            return Token.CC_ALIGNMENT 
+            return Token.CC_ALIGNMENT
         if char in c[Token.CC_COMMENT]:
             return Token.CC_COMMENT
         if char in c[Token.CC_ACTIVE]:
@@ -740,7 +755,7 @@ class Context(object):
         if char in c[Token.CC_PARAMETER]:
             return Token.CC_PARAMETER
         if char in c[Token.CC_IGNORED]:
-            return Token.CC_IGNORED 
+            return Token.CC_IGNORED
         if char in c[Token.CC_INVALID]:
             return Token.CC_INVALID
         return Token.CC_OTHER
@@ -755,7 +770,7 @@ class Context(object):
 
         """
         c = self.contexts[-1].categories = self.categories = self.categories[:]
-        for i in range(0,16):
+        for i in range(0, 16):
             c[i] = c[i].replace(char, '')
         # Don't insert if it's code 12.
         if code != 12:
@@ -795,9 +810,9 @@ class Context(object):
 
         if format is None:
             format = '${%s}' % name
-        newclass = new.classobj('the'+name, (plasTeX.TheCounter,), 
-                               {'format': format})
-        self.addGlobal('the'+name, newclass)
+        newclass = new.classobj('the' + name, (plasTeX.TheCounter,),
+                                {'format': format})
+        self.addGlobal('the' + name, newclass)
 
     def newwrite(self, name, file):
         """
@@ -824,8 +839,8 @@ class Context(object):
         name = str(name)
         # Generate a new count class
         macrolog.debug('creating count %s', name)
-        newclass = new.classobj(name, (plasTeX.CountCommand,), 
-                               {'value': plasTeX.count(initial)})
+        newclass = new.classobj(name, (plasTeX.CountCommand,),
+                                {'value': plasTeX.count(initial)})
         self.addGlobal(name, newclass)
 
     def newdimen(self, name, initial=0):
@@ -842,7 +857,7 @@ class Context(object):
         name = str(name)
         # Generate a new dimen class
         macrolog.debug('creating dimen %s', name)
-        newclass = new.classobj(name, (plasTeX.DimenCommand,), 
+        newclass = new.classobj(name, (plasTeX.DimenCommand,),
                                 {'value': plasTeX.dimen(initial)})
         self.addGlobal(name, newclass)
 
@@ -860,7 +875,7 @@ class Context(object):
         name = str(name)
         # Generate a new glue class
         macrolog.debug('creating dimen %s', name)
-        newclass = new.classobj(name, (plasTeX.GlueCommand,), 
+        newclass = new.classobj(name, (plasTeX.GlueCommand,),
                                 {'value': plasTeX.glue(initial)})
         self.addGlobal(name, newclass)
 
@@ -878,7 +893,7 @@ class Context(object):
         name = str(name)
         # Generate a new muglue class
         macrolog.debug('creating muskip %s', name)
-        newclass = new.classobj(name, (plasTeX.MuGlueCommand,), 
+        newclass = new.classobj(name, (plasTeX.MuGlueCommand,),
                                 {'value': plasTeX.muglue(initial)})
         self.addGlobal(name, newclass)
 
@@ -895,7 +910,7 @@ class Context(object):
         Keyword Arguments:
         initial -- initial value of the 'if' command
 
-        """        
+        """
         name = str(name)
         # \if already exists
         if self.has_key(name):
@@ -904,17 +919,17 @@ class Context(object):
 
         # Generate new 'if' class
         macrolog.debug('creating if %s', name)
-        ifclass = new.classobj(name, (plasTeX.NewIf,), {'state':initial})
+        ifclass = new.classobj(name, (plasTeX.NewIf,), {'state': initial})
         self.addGlobal(name, ifclass)
 
         # Create \iftrue macro
-        truename = name[2:]+'true'
-        newclass = new.classobj(truename, (plasTeX.IfTrue,), {'ifclass':ifclass})
+        truename = name[2:] + 'true'
+        newclass = new.classobj(truename, (plasTeX.IfTrue,), {'ifclass': ifclass})
         self.addGlobal(truename, newclass)
 
         # Create \iffalse macro
-        falsename = name[2:]+'false'
-        newclass = new.classobj(falsename, (plasTeX.IfFalse,), {'ifclass':ifclass})
+        falsename = name[2:] + 'false'
+        newclass = new.classobj(falsename, (plasTeX.IfFalse,), {'ifclass': ifclass})
         self.addGlobal(falsename, newclass)
 
     def newcommand(self, name, nargs=0, definition=None, opt=None):
@@ -936,7 +951,7 @@ class Context(object):
         name = str(name)
         # Macro already exists
         if self.has_key(name):
-            if not issubclass(self[name], (plasTeX.NewCommand, 
+            if not issubclass(self[name], (plasTeX.NewCommand,
                                            plasTeX.Definition)):
                 if not issubclass(self[name], plasTeX.TheCounter):
                     return
@@ -945,16 +960,16 @@ class Context(object):
         if nargs is None:
             nargs = 0
         assert isinstance(nargs, int), 'nargs must be an integer'
-        
+
         if isinstance(definition, basestring):
             definition = [x for x in Tokenizer(definition, self)]
-        
+
         if isinstance(opt, basestring):
             opt = [x for x in Tokenizer(opt, self)]
 
         macrolog.debug('creating newcommand %s', name)
         newclass = new.classobj(name, (plasTeX.NewCommand,),
-                       {'nargs':nargs,'opt':opt,'definition':definition})
+                                {'nargs': nargs, 'opt': opt, 'definition': definition})
 
         self.addGlobal(name, newclass)
 
@@ -979,7 +994,7 @@ class Context(object):
         name = str(name)
         # Macro already exists
         if self.has_key(name):
-            if not issubclass(self[name], (plasTeX.NewCommand, 
+            if not issubclass(self[name], (plasTeX.NewCommand,
                                            plasTeX.Definition)):
                 return
             macrolog.debug('redefining environment "%s"', name)
@@ -989,7 +1004,7 @@ class Context(object):
         assert isinstance(nargs, int), 'nargs must be an integer'
 
         if definition is not None:
-            assert isinstance(definition, (tuple,list)), \
+            assert isinstance(definition, (tuple, list)), \
                 'definition must be a list or tuple'
             assert len(definition) == 2, 'definition must have 2 elements'
 
@@ -1005,12 +1020,12 @@ class Context(object):
 
         # Begin portion
         newclass = new.classobj(name, (plasTeX.NewCommand,),
-                       {'nargs':nargs,'opt':opt,'definition':definition[0]})
+                                {'nargs': nargs, 'opt': opt, 'definition': definition[0]})
         self.addGlobal(name, newclass)
 
         # End portion
-        newclass = new.classobj('end'+name, (plasTeX.NewCommand,),
-                       {'nargs':0,'opt':None,'definition':definition[1]})
+        newclass = new.classobj('end' + name, (plasTeX.NewCommand,),
+                                {'nargs': 0, 'opt': None, 'definition': definition[1]})
         self.addGlobal('end' + name, newclass)
 
     def newdef(self, name, args=None, definition=None, local=True):
@@ -1036,19 +1051,19 @@ class Context(object):
         except UnicodeEncodeError:
             import uuid
             name = 'def_' + uuid.uuid4().replace('-', '')
-        # Macro already exists
-#       if self.has_key(name):
-#           if not issubclass(self[name], (plasTeX.NewCommand, 
-#                                          plasTeX.Definition)):
-#               return
-#           macrolog.debug('redefining definition "%s"', name)
+            # Macro already exists
+        #       if self.has_key(name):
+        #           if not issubclass(self[name], (plasTeX.NewCommand,
+        #                                          plasTeX.Definition)):
+        #               return
+        #           macrolog.debug('redefining definition "%s"', name)
 
         if isinstance(definition, basestring):
             definition = [x for x in Tokenizer(definition, self)]
 
         macrolog.debug('creating def %s', defname)
         newclass = new.classobj(name, (plasTeX.Definition,),
-                       {'args':args,'definition':definition})
+                                {'args': args, 'definition': definition})
 
         if local:
             self.addLocal(defname, newclass)
@@ -1081,8 +1096,8 @@ class Context(object):
         name = str(name)
         # Generate a new chardef class
         macrolog.debug('creating chardef (8-bit) %s', name)
-        newclass = new.classobj(name, (plasTeX.Command,), 
-                                {'unicode':chr(num)})
+        newclass = new.classobj(name, (plasTeX.Command,),
+                                {'unicode': chr(num)})
         self.addGlobal(name, newclass)
 
     def mathchardef(self, name, num):
@@ -1097,6 +1112,6 @@ class Context(object):
         name = str(name)
         # Generate a new chardef class
         macrolog.debug('creating mathchardef (16-bit) %s', name)
-        newclass = new.classobj(name, (plasTeX.Command,), 
-                                {'unicode':unichr(num)})
+        newclass = new.classobj(name, (plasTeX.Command,),
+                                {'unicode': unichr(num)})
         self.addGlobal(name, newclass)

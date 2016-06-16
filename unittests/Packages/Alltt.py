@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 
-import unittest, re, os, tempfile, shutil
-from plasTeX.TeX import TeX
+import os
+import shutil
+import tempfile
+import unittest
 from unittest import TestCase
+
 from BeautifulSoup import BeautifulSoup as Soup
 
-class Alltt(TestCase):
+from plasTeX.TeX import TeX
 
+
+class Alltt(TestCase):
     def runDocument(self, content):
         """
         Compile a document with the given content
@@ -68,7 +73,6 @@ class Alltt(TestCase):
         plines = out.string.split('\n')
         assert lines == plines, 'Content doesn\'t match - %s - %s' % (lines, plines)
 
-
     def testCommands(self):
         text = '''\\begin{alltt}\n   line 1\n   \\textbf{line} 2\n   \\textit{line 3}\n\\end{alltt}'''
         lines = ['', '   line 1', '   line 2', '   line 3', '']
@@ -95,4 +99,3 @@ class Alltt(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

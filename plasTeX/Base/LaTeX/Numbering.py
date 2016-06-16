@@ -5,48 +5,59 @@ C.8.4 Numbering (p194)
 
 """
 
-from plasTeX import Command, Environment
-from plasTeX.Logging import getLogger
+from plasTeX import Command
+
 
 class newcounter(Command):
     args = 'name:str [ within ]'
+
     def invoke(self, tex):
         a = self.parse(tex)
         self.ownerDocument.context.newcounter(a['name'], a['within'])
 
+
 class setcounter(Command):
     args = 'name:str value:int'
+
     def invoke(self, tex):
         a = self.parse(tex)
         self.ownerDocument.context.counters[a['name']].setcounter(a['value'])
 
+
 class addtocounter(Command):
     args = 'name:str value:int'
+
     def invoke(self, tex):
         a = self.parse(tex)
         self.ownerDocument.context.counters[a['name']].addtocounter(a['value'])
 
+
 class value(Command):
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         return tex.textTokens(self.ownerDocument.context.counters[a['name']].arabic)
+
 
 class arabic(Command):
     """ Return arabic representation """
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         return tex.textTokens(self.ownerDocument.context.counters[a['name']].arabic)
 
+
 class Roman(Command):
     """ Return uppercase roman representation """
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         roman = ""
         n, number = divmod(int(self.ownerDocument.context.counters['name']), 1000)
-        roman = "M"*n
+        roman = "M" * n
         if number >= 900:
             roman = roman + "CM"
             number = number - 900
@@ -85,40 +96,52 @@ class Roman(Command):
             number = number - 1
         return tex.textTokens(roman)
 
+
 class roman(Roman):
     """ Return the lowercase roman representation """
+
     def invoke(self, tex):
         a = self.parse(tex)
         return tex.textTokens(self.ownerDocument.context.counters[a['name']].roman)
 
+
 class Alph(Command):
     """ Return the uppercase letter representation """
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         return tex.textTokens(self.ownerDocument.context.counters[a['name']].Alph)
 
+
 class alph(Alph):
     """ Return the lowercase letter representation """
+
     def invoke(self, tex):
         a = self.parse(tex)
         return tex.textTokens(self.ownerDocument.context.counters[a['name']].alph)
 
+
 class fnsymbol(Command):
     """ Return the symbol representation """
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         return tex.textTokens(self.ownerDocument.context.counters[a['name']].fnsymbol)
 
+
 class stepcounter(Command):
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         return self.ownerDocument.context.counters[a['name']].stepcounter()
 
+
 class refstepcounter(Command):
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
         return self.ownerDocument.context.counters[a['name']].stepcounter()

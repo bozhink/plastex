@@ -1,8 +1,17 @@
 #!/usr/bin/env python
 
-import os, time, tempfile, shutil, re, string, pickle, codecs
-try: from hashlib import md5
-except ImportError: from md5 import new as md5
+import codecs
+import os
+import pickle
+import re
+import shutil
+import string
+import tempfile
+
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
 from plasTeX.Logging import getLogger
 from StringIO import StringIO
 from plasTeX.Filenames import Filenames
@@ -20,6 +29,7 @@ try:
     import ImageChops as PILImageChops
 except ImportError:
     PILImage = PILImageChops = None
+
 
 def autoCrop(im, bgcolor=None, margin=0):
     """
@@ -43,14 +53,14 @@ def autoCrop(im, bgcolor=None, margin=0):
 
     origbbox = im.getbbox()
     if origbbox is None:
-        origbbox = (0,0,im.size[0],im.size[1])
+        origbbox = (0, 0, im.size[0], im.size[1])
 
     # Figure out the background color from the corners, if needed
     if bgcolor is None:
-        topleft = im.getpixel((origbbox[0],origbbox[1]))
-        topright = im.getpixel((origbbox[2]-1,origbbox[1]))
-        bottomleft = im.getpixel((origbbox[0],origbbox[3]-1))
-        bottomright = im.getpixel((origbbox[2]-1,origbbox[3]-1))
+        topleft = im.getpixel((origbbox[0], origbbox[1]))
+        topright = im.getpixel((origbbox[2] - 1, origbbox[1]))
+        bottomleft = im.getpixel((origbbox[0], origbbox[3] - 1))
+        bottomright = im.getpixel((origbbox[2] - 1, origbbox[3] - 1))
         corners = [topleft, topright, bottomleft, bottomright]
 
         matches = []
@@ -59,14 +69,22 @@ def autoCrop(im, bgcolor=None, margin=0):
         matches.append(len([x for x in corners if x == bottomleft]))
         matches.append(len([x for x in corners if x == bottomright]))
 
-        try: bgcolor = corners[matches.index(1)]
-        except ValueError: pass
-        try: bgcolor = corners[matches.index(2)]
-        except ValueError: pass
-        try: bgcolor = corners[matches.index(3)]
-        except ValueError: pass
-        try: bgcolor = corners[matches.index(4)]
-        except ValueError: pass
+        try:
+            bgcolor = corners[matches.index(1)]
+        except ValueError:
+            pass
+        try:
+            bgcolor = corners[matches.index(2)]
+        except ValueError:
+            pass
+        try:
+            bgcolor = corners[matches.index(3)]
+        except ValueError:
+            pass
+        try:
+            bgcolor = corners[matches.index(4)]
+        except ValueError:
+            pass
 
     # Create image with only the background color
     bg = PILImage.new("RGB", im.size, bgcolor)
@@ -81,13 +99,15 @@ def autoCrop(im, bgcolor=None, margin=0):
             bbox[1] -= margin
             bbox[2] += margin
             bbox[3] += margin
-            bbox = tuple([max(0,x) for x in bbox])
-        return im.crop(bbox), tuple([abs(x-y) for x,y in zip(origbbox,bbox)]), bgcolor
-    return PILImage.new("RGB", (1,1), bgcolor), (0,0,0,0), bgcolor
-    return None, None, bgcolor # no contents
+            bbox = tuple([max(0, x) for x in bbox])
+        return im.crop(bbox), tuple([abs(x - y) for x, y in zip(origbbox, bbox)]), bgcolor
+    return PILImage.new("RGB", (1, 1), bgcolor), (0, 0, 0, 0), bgcolor
+    return None, None, bgcolor  # no contents
+
 
 class Box(object):
     pass
+
 
 class Dimension(float):
     """
@@ -99,29 +119,37 @@ class Dimension(float):
 
     """
     fontSize = 15
+
     @property
-    def ex(self): 
+    def ex(self):
         return '%sex' % self.format(self / (self.fontSize * 0.6))
+
     @property
-    def em(self): 
+    def em(self):
         return '%sem' % self.format(self / self.fontSize)
+
     @property
-    def pt(self): 
+    def pt(self):
         return '%spt' % self.format(self)
+
     @property
-    def px(self): 
+    def px(self):
         return '%spx' % self.format(self)
+
     @property
-    def mm(self): 
+    def mm(self):
         return '%smm' % self.format(self / 72.0 * 25.4)
+
     @property
-    def inch(self): 
+    def inch(self):
         return '%sin' % self.format(self / 72.0)
+
     @property
-    def cm(self): 
+    def cm(self):
         return '%scm' % self.format(self / 72.0 * 2.54)
+
     @property
-    def pc(self): 
+    def pc(self):
         return '%spc' % self.format(self / 12.0)
 
     def __getattribute__(self, name):
@@ -139,7 +167,7 @@ class Dimension(float):
 
     def __repr__(self):
         return self.format(self)
-        
+
 
 class DimensionPlaceholder(str):
     """ 
@@ -151,23 +179,26 @@ class DimensionPlaceholder(str):
 
     """
     imageUnits = ''
+
     def __getattribute__(self, name):
-        if name in ['in','ex','em','pt','px','mm','cm','pc']:
+        if name in ['in', 'ex', 'em', 'pt', 'px', 'mm', 'cm', 'pc']:
             if not self:
                 return self
-            vars = {'units':name}
+            vars = {'units': name}
             return self + string.Template(self.imageUnits).substitute(vars)
         return str.__getattribute__(self, name)
+
     def __setattribute__(self, name, value):
-        if name in ['in','ex','em','pt','px','mm','cm','pc']:
-            return 
+        if name in ['in', 'ex', 'em', 'pt', 'px', 'mm', 'cm', 'pc']:
+            return
         return str.__setattribute__(self, name, value)
+
 
 class Image(object):
     """ Generic image object """
 
     def __init__(self, filename, config, width=None, height=None, alt=None,
-                       depth=None, longdesc=None):
+                 depth=None, longdesc=None):
         self.filename = filename
         self.path = os.path.join(os.getcwd(), self.filename)
         self.width = width
@@ -175,7 +206,7 @@ class Image(object):
         self.alt = alt
         self.depth = depth
         self.depthRatio = 0
-        self.longdesc = longdesc 
+        self.longdesc = longdesc
         self.config = config
         self._cropped = False
         self.bitmap = self
@@ -184,6 +215,7 @@ class Image(object):
     def height():
         def fget(self):
             return getattr(self.bitmap, '_height', None)
+
         def fset(self, value):
             if value is None:
                 self._height = value
@@ -191,12 +223,15 @@ class Image(object):
                 self._height = value
             else:
                 self._height = Dimension(value)
+
         return locals()
+
     height = property(**height())
 
     def width():
         def fget(self):
             return getattr(self.bitmap, '_width', None)
+
         def fset(self, value):
             if value is None:
                 self._width = value
@@ -204,12 +239,15 @@ class Image(object):
                 self._width = value
             else:
                 self._width = Dimension(value)
+
         return locals()
+
     width = property(**width())
 
     def depth():
         def fget(self):
             return getattr(self, '_depth', None)
+
         def fset(self, value):
             if value is None:
                 self._depth = value
@@ -217,7 +255,9 @@ class Image(object):
                 self._depth = value
             else:
                 self._depth = Dimension(value)
+
         return locals()
+
     depth = property(**depth())
 
     @property
@@ -236,7 +276,7 @@ class Image(object):
 
         # Crop an SVG image
         if os.path.splitext(self.path)[-1] in ['.svg']:
-            svg = open(self.path,'r').read()
+            svg = open(self.path, 'r').read()
 
             self.width = 0
             width = re.search(r'width=(?:\'|")([^\d\.]+)\w*(?:\'|")', svg)
@@ -255,31 +295,33 @@ class Image(object):
                     self.depth = depth - 1
                 else:
                     self.depth = depth
-                
+
             self._cropped = True
             return
 
         padbaseline = self.config['baseline-padding']
 
         try:
-            im, self.depth = self._stripBaseline(PILImage.open(self.path), 
-                                             padbaseline)
+            im, self.depth = self._stripBaseline(PILImage.open(self.path),
+                                                 padbaseline)
             self.width, self.height = im.size
         except IOError, msg:
-#           import traceback
-#           traceback.print_exc()
+            #           import traceback
+            #           traceback.print_exc()
             self._cropped = True
             log.warning(msg)
             return
 
         if padbaseline and self.depth > padbaseline:
-            log.warning('depth of image %s (%d) is greater than the baseline padding (%s).  This may cause the image to be misaligned with surrounding text.', self.filename, self.depth, padbaseline)
+            log.warning(
+                'depth of image %s (%d) is greater than the baseline padding (%s).  This may cause the image to be misaligned with surrounding text.',
+                self.filename, self.depth, padbaseline)
 
         if self.config['transparent']:
             im = im.convert("P")
-            lut = im.resize((256,1))
+            lut = im.resize((256, 1))
             lut.putdata(range(256))
-            index = list(lut.convert("RGB").getdata()).index((255,255,255))
+            index = list(lut.convert("RGB").getdata()).index((255, 255, 255))
             im.save(self.path, transparency=index)
         else:
             im.save(self.path)
@@ -329,21 +371,21 @@ class Image(object):
         im, box, background = self._autoCrop(im)
 
         width, height = im.size
-        
+
         # Determine if registration mark is at top or left
         top = False
         # Found mark at top
-        if im.getpixel((0,0)) != background:
+        if im.getpixel((0, 0)) != background:
             top = True
             i = 1
             # Parse past the registration mark
             # We're fudging the vertical position by 1px to catch 
             # things sitting right under the baseline.
-            while i < width and im.getpixel((i,1)) != background:
+            while i < width and im.getpixel((i, 1)) != background:
                 i += 1
             # Look for additional content after mark
             if i < width:
-                while i < width and im.getpixel((i,1)) == background:
+                while i < width and im.getpixel((i, 1)) == background:
                     i += 1
                 # If there is non-background content after mark,
                 # consider the mark to be on the left
@@ -354,43 +396,43 @@ class Image(object):
         blank = False
         if top:
             pos = height - 1
-            while pos and im.getpixel((0,pos)) == background:
+            while pos and im.getpixel((0, pos)) == background:
                 pos -= 1
             depth = pos - height + 1
 
             # Get the height of the registration mark so it can be cropped out
             rheight = 0
-            while rheight < height and im.getpixel((0,rheight)) != background:
+            while rheight < height and im.getpixel((0, rheight)) != background:
                 rheight += 1
 
             # If the depth is the entire height, just make depth = 0
-            if -depth == (height-rheight):
+            if -depth == (height - rheight):
                 depth = 0
 
             # Handle empty images
             bbox = im.getbbox()
-            if bbox is None or rheight == (height-1):
+            if bbox is None or rheight == (height - 1):
                 blank = True
             else:
                 bbox = list(bbox)
                 bbox[1] = rheight
 
         # Registration mark on left side
-        if blank or not(top) or im.getbbox()[1] == 0:
+        if blank or not (top) or im.getbbox()[1] == 0:
             pos = height - 1
-            while pos and im.getpixel((0,pos)) == background:
+            while pos and im.getpixel((0, pos)) == background:
                 pos -= 1
             depth = pos - height + 1
 
             # Get the width of the registration mark so it can be cropped out
             rwidth = 0
-            while rwidth < width and im.getpixel((rwidth,pos)) != background:
+            while rwidth < width and im.getpixel((rwidth, pos)) != background:
                 rwidth += 1
 
             # Handle empty images
             bbox = im.getbbox()
-            if bbox is None or rwidth == (width-1):
-                return PILImage.new("RGB", (1,1), background), 0
+            if bbox is None or rwidth == (width - 1):
+                return PILImage.new("RGB", (1, 1), background), 0
 
             bbox = list(bbox)
             bbox[0] = rwidth
@@ -407,12 +449,12 @@ class Image(object):
         # set one margin-bottom for all images.
         if padbaseline:
             width, height = im.size
-            newim = PILImage.new("RGB", (width,height+(padbaseline+depth)), background)
+            newim = PILImage.new("RGB", (width, height + (padbaseline + depth)), background)
             newim.paste(im, im.getbbox())
             im = newim
 
         return im, depth
-    
+
 
 class Imager(object):
     """ Generic Imager """
@@ -445,10 +487,10 @@ class Imager(object):
         # The key is the LaTeX source and the value is the image instance.
         self._cache = {}
         usednames = {}
-        self._filecache = os.path.abspath(os.path.join('.cache', 
-                                          self.__class__.__name__+'.images'))
+        self._filecache = os.path.abspath(os.path.join('.cache',
+                                                       self.__class__.__name__ + '.images'))
         if self.config['images']['cache'] and os.path.isfile(self._filecache):
-            try: 
+            try:
                 self._cache = pickle.load(open(self._filecache, 'r'))
                 for key, value in self._cache.items():
                     if not os.path.isfile(value.filename):
@@ -465,9 +507,9 @@ class Imager(object):
         self.staticimages = ordereddict()
 
         # Filename generator
-        self.newFilename = Filenames(self.config['images'].get('filenames', raw=True), 
-                           vars={'jobname':document.userdata.get('jobname','')},
-                           extension=self.fileExtension, invalid=usednames)
+        self.newFilename = Filenames(self.config['images'].get('filenames', raw=True),
+                                     vars={'jobname': document.userdata.get('jobname', '')},
+                                     extension=self.fileExtension, invalid=usednames)
 
         # Start the document with a preamble
         self.source = StringIO()
@@ -501,11 +543,11 @@ class Imager(object):
         self.source.write(document.preamble.source)
         self.source.write('\\makeatletter\\oddsidemargin -0.25in\\evensidemargin -0.25in\n')
 
-#       self.source.write('\\tracingoutput=1\n')
-#       self.source.write('\\tracingonline=1\n')
-#       self.source.write('\\showboxbreadth=\maxdimen\n')
-#       self.source.write('\\showboxdepth=\maxdimen\n')
-#       self.source.write('\\newenvironment{plasTeXimage}[1]{\\def\\@current@file{#1}\\thispagestyle{empty}\\def\\@eqnnum{}\\setbox0=\\vbox\\bgroup}{\\egroup\\typeout{imagebox:\\@current@file(\\the\\ht0+\\the\\dp0)}\\box0\\newpage}')
+        #       self.source.write('\\tracingoutput=1\n')
+        #       self.source.write('\\tracingonline=1\n')
+        #       self.source.write('\\showboxbreadth=\maxdimen\n')
+        #       self.source.write('\\showboxdepth=\maxdimen\n')
+        #       self.source.write('\\newenvironment{plasTeXimage}[1]{\\def\\@current@file{#1}\\thispagestyle{empty}\\def\\@eqnnum{}\\setbox0=\\vbox\\bgroup}{\\egroup\\typeout{imagebox:\\@current@file(\\the\\ht0+\\the\\dp0)}\\box0\\newpage}')
 
         self.source.write('\\@ifundefined{plasTeXimage}{'
                           '\\newenvironment{plasTeXimage}[1]{' +
@@ -544,7 +586,7 @@ class Imager(object):
     @property
     def enabled(self):
         if self.config['images']['enabled'] and \
-           (self.command or (type(self) is not Imager and type(self) is not VectorImager)): 
+                (self.command or (type(self) is not Imager and type(self) is not VectorImager)):
             return True
         return False
 
@@ -555,13 +597,14 @@ class Imager(object):
 
         for value in self._cache.values():
             if value.checksum and os.path.isfile(value.path):
-                 d = md5(open(value.path,'r').read()).digest()
-                 if value.checksum != d:
-                     log.warning('The image data for "%s" on the disk has changed.  You may want to clear the image cache.' % value.filename)
+                d = md5(open(value.path, 'r').read()).digest()
+                if value.checksum != d:
+                    log.warning(
+                        'The image data for "%s" on the disk has changed.  You may want to clear the image cache.' % value.filename)
 
         # Bail out if there are no images
         if not self.images:
-            return 
+            return
 
         if not self.enabled:
             return
@@ -577,11 +620,11 @@ class Imager(object):
 
         for value in self._cache.values():
             if value.checksum is None and os.path.isfile(value.path):
-                 value.checksum = md5(open(value.path,'r').read()).digest()
+                value.checksum = md5(open(value.path, 'r').read()).digest()
 
         if not os.path.isdir(os.path.dirname(self._filecache)):
             os.makedirs(os.path.dirname(self._filecache))
-        pickle.dump(self._cache, open(self._filecache,'w'))
+        pickle.dump(self._cache, open(self._filecache, 'w'))
 
     def compileLatex(self, source):
         """
@@ -605,7 +648,8 @@ class Imager(object):
         # Write LaTeX source file
         if self.config['images']['save-file']:
             self.source.seek(0)
-            codecs.open(os.path.join(cwd,filename), 'w', self.config['files']['input-encoding']).write(self.source.read())
+            codecs.open(os.path.join(cwd, filename), 'w', self.config['files']['input-encoding']).write(
+                self.source.read())
         self.source.seek(0)
         codecs.open(filename, 'w', self.config['files']['input-encoding']).write(self.source.read())
 
@@ -617,21 +661,21 @@ class Imager(object):
 
         cmd = r'%s %s' % (program, filename)
         p = subprocess.Popen(shlex.split(cmd),
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT,
-                     )
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT,
+                             )
         while True:
             line = p.stdout.readline()
             done = p.poll()
             if line:
-                imagelog.info(str(line.strip()))        
+                imagelog.info(str(line.strip()))
             elif done is not None:
                 break
 
         output = None
-        for ext in ['.dvi','.pdf','.ps']:
-            if os.path.isfile('images'+ext):
-                output = WorkingFile('images'+ext, 'rb', tempdir=tempdir)
+        for ext in ['.dvi', '.pdf', '.ps']:
+            if os.path.isfile('images' + ext):
+                output = WorkingFile('images' + ext, 'rb', tempdir=tempdir)
                 break
 
         # Change back to original working directory
@@ -666,13 +710,13 @@ class Imager(object):
         p = subprocess.Popen(shlex.split(cmd),
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT,
-                           )
+                             )
         done = None
         while True:
             line = p.stdout.readline()
             done = p.poll()
             if line:
-                imagelog.info(str(line.strip()))        
+                imagelog.info(str(line.strip()))
             elif done is not None:
                 break
         return done, None
@@ -704,23 +748,25 @@ class Imager(object):
 
         # Get a list of all of the image files
         if images is None:
-            images = [f for f in os.listdir('.') 
-                            if re.match(r'^img\d+\.\w+$', f)]
+            images = [f for f in os.listdir('.')
+                      if re.match(r'^img\d+\.\w+$', f)]
         if len(images) != len(self.images):
-            log.warning('The number of images generated (%d) and the number of images requested (%d) is not the same.' % (len(images), len(self.images)))
+            log.warning(
+                'The number of images generated (%d) and the number of images requested (%d) is not the same.' % (
+                    len(images), len(self.images)))
 
         # Sort by creation date
-        #images.sort(lambda a,b: cmp(os.stat(a)[9], os.stat(b)[9]))
+        # images.sort(lambda a,b: cmp(os.stat(a)[9], os.stat(b)[9]))
 
-        images.sort(lambda a,b: cmp(int(re.search(r'(\d+)\.\w+$',a).group(1)), 
-                                    int(re.search(r'(\d+)\.\w+$',b).group(1))))
+        images.sort(lambda a, b: cmp(int(re.search(r'(\d+)\.\w+$', a).group(1)),
+                                     int(re.search(r'(\d+)\.\w+$', b).group(1))))
 
         os.chdir(cwd)
 
         if PILImage is None:
             log.warning('PIL (Python Imaging Library) is not installed.  ' +
                         'Images will not be cropped.')
-            
+
         # Move images to their final location
         for src, dest in zip(images, self.images.values()):
             # Move the image
@@ -728,19 +774,19 @@ class Imager(object):
             if directory and not os.path.isdir(directory):
                 os.makedirs(directory)
             try:
-                shutil.copy2(os.path.join(tempdir,src), dest.path)
+                shutil.copy2(os.path.join(tempdir, src), dest.path)
             except OSError:
-                shutil.copy(os.path.join(tempdir,src), dest.path)
+                shutil.copy(os.path.join(tempdir, src), dest.path)
 
             # Crop the image
-            try: 
+            try:
                 dest.crop()
                 status.dot()
             except Exception, msg:
                 import traceback
                 traceback.print_exc()
                 log.warning('failed to crop %s (%s)', dest.path, msg)
-        
+
         # Remove temporary directory
         shutil.rmtree(tempdir, True)
 
@@ -781,13 +827,13 @@ class Imager(object):
         # See if this image has been cached
         if self._cache.has_key(key):
             return self._cache[key]
-            
+
         # Generate a filename
         if not filename:
             filename = self.newFilename()
 
         # Add the image to the current document and cache
-        #log.debug('Creating %s from %s', filename, text)
+        # log.debug('Creating %s from %s', filename, text)
         self.writeImage(filename, text, context)
 
         img = Image(filename, self.config['images'])
@@ -795,14 +841,14 @@ class Imager(object):
         # Populate image attrs that will be bound later
         if self.imageAttrs:
             tmpl = string.Template(self.imageAttrs)
-            vars = {'filename':filename}
-            for name in ['height','width','depth']:
+            vars = {'filename': filename}
+            for name in ['height', 'width', 'depth']:
                 if getattr(img, name) is None:
                     vars['attr'] = name
                     value = DimensionPlaceholder(tmpl.substitute(vars))
                     value.imageUnits = self.imageUnits
                     setattr(img, name, value)
-    
+
         self.images[filename] = self._cache[key] = img
         return img
 
@@ -846,8 +892,8 @@ class Imager(object):
                 if PILImage is None:
                     shutil.copyfile(name, path)
                     tmpl = string.Template(self.imageAttrs)
-                    width = DimensionPlaceholder(tmpl.substitute({'filename':path, 'attr':'width'}))
-                    height = DimensionPlaceholder(tmpl.substitute({'filename':path, 'attr':'height'}))
+                    width = DimensionPlaceholder(tmpl.substitute({'filename': path, 'attr': 'width'}))
+                    height = DimensionPlaceholder(tmpl.substitute({'filename': path, 'attr': 'height'}))
                     height.imageUnits = width.imageUnits = self.imageUnits
                 else:
                     img = PILImage.open(name)
@@ -856,11 +902,11 @@ class Imager(object):
                     if scale != 1:
                         width = int(width * scale)
                         height = int(height * scale)
-                        img.resize((width,height))
+                        img.resize((width, height))
                         img.save(path)
                     else:
                         shutil.copyfile(name, path)
-                    
+
             # If PIL is available, convert the image to the appropriate type
             else:
                 img = PILImage.open(name)
@@ -869,7 +915,7 @@ class Imager(object):
                 if scale != 1:
                     width = int(width * scale)
                     height = int(height * scale)
-                    img.resize((width,height))
+                    img.resize((width, height))
                 img.save(path)
             img = Image(path, self.ownerDocument.config['images'], width=width, height=height)
             self.staticimages[name] = img
@@ -877,7 +923,7 @@ class Imager(object):
 
         # If anything fails, just let the imager handle it...
         except Exception, msg:
-            #log.warning('%s in image "%s".  Reverting to LaTeX to generate the image.' % (msg, name))
+            # log.warning('%s in image "%s".  Reverting to LaTeX to generate the image.' % (msg, name))
             pass
         return self.newImage(node.source)
 
@@ -887,7 +933,7 @@ class VectorImager(Imager):
 
     def writePreamble(self, document):
         Imager.writePreamble(self, document)
-#       self.source.write('\\usepackage{type1ec}\n')
+        #       self.source.write('\\usepackage{type1ec}\n')
         self.source.write('\\def\\plasTeXregister{}\n')
 
 
@@ -913,4 +959,3 @@ class WorkingFile(file):
 
     def __del__(self):
         self.close()
-

@@ -8,20 +8,24 @@ C.11.6 Terminal Input and Output
 """
 
 import codecs
+
 from plasTeX import Command, Environment
 from plasTeX.Logging import getLogger
 
 log = getLogger()
 
+
 class nofiles(Command):
     pass
+
 
 class input(Command):
     """ \\input """
     args = 'name:str'
+
     def invoke(self, tex):
         a = self.parse(tex)
-        try: 
+        try:
             path = tex.kpsewhich(attrs['name'])
 
             status.info(' ( %s.tex ' % path)
@@ -34,29 +38,37 @@ class input(Command):
             status.info(' ) ')
         return []
 
+
 class include(input):
     pass
+
 
 class includeonly(Command):
     args = 'files:list:str'
 
+
 class filecontents(Environment):
     args = 'file:str'
+
 
 class FileContentsStar(Environment):
     macroName = 'filecontents*'
     args = 'file:str'
 
+
 class listfiles(Command):
     pass
 
+
 class typeout(Command):
     args = 'message:str'
+
     def invoke(self, tex):
         log.info(self.parse(tex)['message'])
 
+
 class typein(Command):
     args = '[ command:str ] message'
+
     def invoke(self, tex):
         log.info(self.parse(tex)['message'])
-        

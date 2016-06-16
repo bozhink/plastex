@@ -2,11 +2,11 @@
 
 import unittest
 from unittest import TestCase
-from plasTeX import Macro
+
 from plasTeX.TeX import *
 
-class ActiveChars(TestCase):
 
+class ActiveChars(TestCase):
     def testActive(self):
         t = TeX()
         t.input(r'\catcode`|=\active \def|#1{\bf#1} |{bold text}')
@@ -29,4 +29,3 @@ class ActiveChars(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

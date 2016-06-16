@@ -5,10 +5,11 @@ C.1.2 Environments (p167)
 
 """
 
-from plasTeX import Command, Environment
+from plasTeX import Command
 from plasTeX.Logging import getLogger
 
 envlog = getLogger('parse.environments')
+
 
 class begin(Command):
     """ Beginning of an environment """
@@ -16,7 +17,7 @@ class begin(Command):
 
     def invoke(self, tex):
         """ Parse the \\begin{...} """
-#       name = self.parse(tex)['name']
+        #       name = self.parse(tex)['name']
         name = tex.readArgument(type=str)
         envlog.debug(name)
 
@@ -35,13 +36,14 @@ class begin(Command):
             return [obj]
         return out
 
+
 class end(Command):
     """ End of an environment """
     args = 'name:str'
 
     def invoke(self, tex):
         """ Parse the \\end{...} """
-#       name = self.parse(tex)['name']
+        #       name = self.parse(tex)['name']
         name = tex.readArgument(type=str)
         envlog.debug(name)
 
@@ -58,7 +60,7 @@ class end(Command):
             return [obj]
 
         while self.ownerDocument.context.currenvir is not None and \
-              not self.ownerDocument.context.currenvir == name:
+                not self.ownerDocument.context.currenvir == name:
             del self.ownerDocument.context.currenvir
 
         return out

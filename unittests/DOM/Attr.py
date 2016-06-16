@@ -2,10 +2,11 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.DOM import *
 
-class AttributeTest(TestCase):
 
+class AttributeTest(TestCase):
     def testNodeName(self):
         doc = Document()
         one = doc.createAttribute('one')
@@ -19,4 +20,3 @@ class AttributeTest(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

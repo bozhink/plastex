@@ -1,25 +1,29 @@
 #!/usr/bin/env python
 
-import codecs, os, shutil, string
-from plasTeX.Filenames import Filenames
+import codecs
+import os
+
 from plasTeX.DOM import Node
+from plasTeX.Filenames import Filenames
 from plasTeX.Logging import getLogger
-from plasTeX.Imagers import Image, PILImage
 
 log = getLogger()
 status = getLogger('status')
 
 import logging
+
 logging.getLogger('simpleTAL').setLevel(logging.WARNING)
 logging.getLogger('simpleTALES').setLevel(logging.WARNING)
 
-__all__ = ['Renderer','Renderable']
+__all__ = ['Renderer', 'Renderable']
+
 
 def baseclasses(cls):
     output = [cls]
     for item in cls.__bases__:
         output.extend(baseclasses(item))
     return [x for x in output if x is not object]
+
 
 def mixin(base, mix, overwrite=False):
     """
@@ -35,12 +39,13 @@ def mixin(base, mix, overwrite=False):
     mixed = base._mixed_
     for cls in baseclasses(mix):
         for item, value in vars(cls).items():
-            if item in ['__dict__','__module__','__doc__','__weakref__']:
+            if item in ['__dict__', '__module__', '__doc__', '__weakref__']:
                 continue
             if overwrite or not vars(base).has_key(item):
                 old = vars(base).get(item, None)
                 setattr(base, item, value)
                 mixed[item] = (mix, old)
+
 
 def unmix(base, mix=None):
     """
@@ -94,17 +99,17 @@ class Renderable(object):
 
         # If we don't have childNodes, then we're done
         if not self.hasChildNodes():
-#           if self.filename:
-#               status.info(' [ %s ] ', self.filename)
+            #           if self.filename:
+            #               status.info(' [ %s ] ', self.filename)
             return u''
 
-#       if self.filename:
-#           status.info(' [ %s ', self.filename)
+        # if self.filename:
+        #           status.info(' [ %s ', self.filename)
 
         # At the very top level, only render the DOCUMENT_LEVEL node
         if self.nodeType == Node.DOCUMENT_NODE:
             childNodes = [x for x in self.childNodes
-                            if x.level == Node.DOCUMENT_LEVEL]
+                          if x.level == Node.DOCUMENT_LEVEL]
         else:
             childNodes = self.childNodes
 
@@ -173,7 +178,9 @@ class Renderable(object):
             # If a plain string is returned, we have no idea what
             # the encoding is, but we'll make a guess.
             if type(val) is not unicode:
-                log.warning('The renderer for %s returned a non-unicode string.  Using the default input encoding.' % type(child).__name__)
+                log.warning(
+                    'The renderer for %s returned a non-unicode string.  Using the default input encoding.' % type(
+                        child).__name__)
                 val = unicode(val, child.config['files']['input-encoding'])
 
             # If the content should go to a file, write it and go
@@ -194,7 +201,9 @@ class Renderable(object):
                     # If a plain string is returned, we have no idea what
                     # the encoding is, but we'll make a guess.
                     if type(val) is not unicode:
-                        log.warning('The renderer for %s returned a non-unicode string.  Using the default input encoding.' % type(child).__name__)
+                        log.warning(
+                            'The renderer for %s returned a non-unicode string.  Using the default input encoding.' % type(
+                                child).__name__)
                         val = unicode(val, child.config['files']['input-encoding'])
 
                 # Write the file content
@@ -209,8 +218,8 @@ class Renderable(object):
             # Append the resultant unicode object to the output
             s.append(val)
 
-#       if self.filename:
-#           status.info(' ] ')
+        # if self.filename:
+        #           status.info(' ] ')
 
         return r.outputType(u''.join(s))
 
@@ -274,8 +283,10 @@ class Renderable(object):
         """
         r = Node.renderer
 
-        try: return r.files[self]
-        except KeyError: pass
+        try:
+            return r.files[self]
+        except KeyError:
+            pass
 
         filename = None
 
@@ -287,7 +298,7 @@ class Renderable(object):
                 newFilename = Filenames(override,
                                         (config['files']['bad-chars'],
                                          config['files']['bad-chars-sub']),
-                                        {'jobname':userdata.get('jobname','')},
+                                        {'jobname': userdata.get('jobname', '')},
                                         r.fileExtension)
                 filename = r.files[self] = newFilename()
 
@@ -314,7 +325,7 @@ class Renderable(object):
                     ns['title'] = self.title
             r.files[self] = filename = r.newFilename()
 
-#       print type(self), filename
+        # print type(self), filename
 
         return filename
 
@@ -405,7 +416,7 @@ class Renderer(dict):
         self.newFilename = Filenames(config['files'].get('filename', raw=True),
                                      (config['files']['bad-chars'],
                                       config['files']['bad-chars-sub']),
-                                     {'jobname':document.userdata.get('jobname', '')}, self.fileExtension)
+                                     {'jobname': document.userdata.get('jobname', '')}, self.fileExtension)
 
         self.cacheFilenames(document)
 
@@ -415,7 +426,7 @@ class Renderer(dict):
             if name == 'none':
                 break
             try:
-                exec('from plasTeX.Imagers.%s import Imager' % name)
+                exec ('from plasTeX.Imagers.%s import Imager' % name)
             except ImportError, msg:
                 log.warning("Could not load imager '%s' because '%s'" % (name, msg))
                 continue
@@ -432,7 +443,9 @@ class Renderer(dict):
         # Still no imager? Just use the default.
         if self.imager is None:
             if 'none' not in names:
-                log.warning('Could not find a valid imager in the list: %s.  The default imager will be used.' % ', '.join(names))
+                log.warning(
+                    'Could not find a valid imager in the list: %s.  The default imager will be used.' % ', '.join(
+                        names))
             from plasTeX.Imagers import Imager
             self.imager = Imager(document, self.imageTypes)
 
@@ -449,7 +462,7 @@ class Renderer(dict):
             if name == 'none':
                 break
             try:
-                exec('from plasTeX.Imagers.%s import Imager' % name)
+                exec ('from plasTeX.Imagers.%s import Imager' % name)
             except ImportError, msg:
                 log.warning("Could not load imager '%s' because '%s'" % (name, msg))
                 continue
@@ -466,12 +479,14 @@ class Renderer(dict):
         # Still no vector imager? Just use the default.
         if self.vectorImager is None:
             if 'none' not in names:
-                log.warning('Could not find a valid vector imager in the list: %s.  The default vector imager will be used.' % ', '.join(names))
+                log.warning(
+                    'Could not find a valid vector imager in the list: %s.  The default vector imager will be used.' % ', '.join(
+                        names))
             from plasTeX.Imagers import VectorImager
             self.vectorImager = VectorImager(document, self.vectorImageTypes)
 
         if self.vectorImageTypes and \
-           self.vectorImager.fileExtension not in self.vectorImageTypes:
+                        self.vectorImager.fileExtension not in self.vectorImageTypes:
             self.vectorImager.fileExtension = self.vectorImageTypes[0]
         if self.imageAttrs and not self.vectorImager.imageAttrs:
             self.vectorImager.imageAttrs = self.imageAttrs
@@ -492,8 +507,8 @@ class Renderer(dict):
         self.cleanup(document, self.files.values(), postProcess=postProcess)
 
         # Write out auxilliary information
-        pauxname = os.path.join(document.userdata.get('working-dir','.'),
-                                '%s.paux' % document.userdata.get('jobname',''))
+        pauxname = os.path.join(document.userdata.get('working-dir', '.'),
+                                '%s.paux' % document.userdata.get('jobname', ''))
         rname = config['general']['renderer']
         document.context.persist(pauxname, rname)
 
@@ -572,7 +587,6 @@ class Renderer(dict):
         return default
 
 
-
 class StaticNode(object):
     """
     Object to assist in rendering files
@@ -590,6 +604,7 @@ class StaticNode(object):
     problems.
 
     """
+
     def __init__(self, obj, content):
         """
         Initialize the static node
@@ -601,18 +616,20 @@ class StaticNode(object):
 
         """
         self._node_data = (obj, content)
+
     def __getattribute__(self, name):
-        if name in ['_node_data','__unicode__','__str__']:
+        if name in ['_node_data', '__unicode__', '__str__']:
             return object.__getattribute__(self, name)
         return getattr(self._node_data[0], name)
+
     def __unicode__(self):
         return self._node_data[1]
+
     def __str__(self):
         return unicode(self)
 
 
 class URL(unicode):
-
     def relativeTo(self, src):
         """
         Get the path of this URL relative to `src'

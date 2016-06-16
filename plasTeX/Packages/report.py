@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from book import *
 
 def ProcessOptions(options, document):
     import book

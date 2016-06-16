@@ -5,19 +5,21 @@ C.10.2 The array and tabular Environments
 
 """
 
-import new, sys
+import new
+import sys
+
 from plasTeX import Macro, Environment, Command, DimenCommand
 from plasTeX import sourceChildren, sourceArguments
 
-class ColumnType(Macro):
 
+class ColumnType(Macro):
     columnAttributes = {}
     columnTypes = {}
 
     def __init__(self, *args, **kwargs):
         Macro.__init__(self, *args, **kwargs)
         self.style.update(self.columnAttributes)
-        
+
     @classmethod
     def new(cls, name, attributes, args='', before=[], after=[], between=[]):
         """
@@ -33,24 +35,25 @@ class ColumnType(Macro):
         after -- tokens to insert after this column
 
         """
-        newclass = new.classobj(name, (cls,), 
-            {'columnAttributes':attributes, 'args':args,
-             'before':before, 'after':after, 'between':between})
+        newclass = new.classobj(name, (cls,),
+                                {'columnAttributes': attributes, 'args': args,
+                                 'before': before, 'after': after, 'between': between})
         cls.columnTypes[name] = newclass
 
     def __repr__(self):
         return '%s: %s' % (type(self).__name__, self.style)
 
-ColumnType.new('r', {'text-align':'right'})
-ColumnType.new('R', {'text-align':'right'})
-ColumnType.new('c', {'text-align':'center'})
-ColumnType.new('C', {'text-align':'center'})
-ColumnType.new('l', {'text-align':'left'})
-ColumnType.new('L', {'text-align':'left'})
-ColumnType.new('J', {'text-align':'left'})
-ColumnType.new('X', {'text-align':'left'})
-ColumnType.new('p', {'text-align':'left'}, args='width:str')
-ColumnType.new('d', {'text-align':'right'}, args='delim:str')
+
+ColumnType.new('r', {'text-align': 'right'})
+ColumnType.new('R', {'text-align': 'right'})
+ColumnType.new('c', {'text-align': 'center'})
+ColumnType.new('C', {'text-align': 'center'})
+ColumnType.new('l', {'text-align': 'left'})
+ColumnType.new('L', {'text-align': 'left'})
+ColumnType.new('J', {'text-align': 'left'})
+ColumnType.new('X', {'text-align': 'left'})
+ColumnType.new('p', {'text-align': 'left'}, args='width:str')
+ColumnType.new('d', {'text-align': 'right'}, args='delim:str')
 
 
 class Array(Environment):
@@ -69,6 +72,7 @@ class Array(Environment):
         labelable = True
         counter = 'table'
         blockType = True
+
         def invoke(self, tex):
             res = Command.invoke(self, tex)
             self.title = self.captionName
@@ -77,6 +81,7 @@ class Array(Environment):
     class CellDelimiter(Command):
         """ Cell delimiter """
         macroName = 'active::&'
+
         def invoke(self, tex):
             # Pop and push a new context for each cell, this keeps
             # any formatting changes from the previous cell from
@@ -99,8 +104,8 @@ class Array(Environment):
             self.parse(tex)
             self.ownerDocument.context.push()
             # Add a phantom row and cell to absorb the appropriate tokens
-            return [self, self.ownerDocument.createElement('ArrayRow'), 
-                          self.ownerDocument.createElement('ArrayCell')]
+            return [self, self.ownerDocument.createElement('ArrayRow'),
+                    self.ownerDocument.createElement('ArrayCell')]
 
     class cr(EndRow):
         macroName = None
@@ -116,7 +121,7 @@ class Array(Environment):
 
         """
         BORDER_BEFORE = 0
-        BORDER_AFTER  = 1
+        BORDER_AFTER = 1
 
         position = BORDER_BEFORE
 
@@ -135,8 +140,10 @@ class Array(Environment):
             # span the whole table.
             a = self.attributes
             if a and a.has_key('span'):
-                try: start, end = a['span']
-                except TypeError: start = end = a['span']
+                try:
+                    start, end = a['span']
+                except TypeError:
+                    start = end = a['span']
             else:
                 start = -sys.maxint
                 end = sys.maxint
@@ -158,11 +165,11 @@ class Array(Environment):
 
     class hline(BorderCommand):
         """ Full horizontal line """
-        locations = ('top','bottom')
+        locations = ('top', 'bottom')
 
     class vline(BorderCommand):
         """ Vertical line """
-        locations = ('left','right')
+        locations = ('left', 'right')
 
     #
     # booktabs commands
@@ -224,11 +231,11 @@ class Array(Environment):
             escape = '\\'
             s = []
             argSource = sourceArguments(self.parentNode)
-            if not argSource: 
+            if not argSource:
                 argSource = ' '
             s.append('%sbegin{%s}%s' % (escape, name, argSource))
             for cell in self:
-                s.append(sourceChildren(cell, par=not(self.parentNode.mathMode)))
+                s.append(sourceChildren(cell, par=not (self.parentNode.mathMode)))
                 if cell.endToken is not None:
                     s.append(cell.endToken.source)
             if self.endToken is not None:
@@ -250,7 +257,7 @@ class Array(Environment):
             for cell in self:
                 horiz, vert = cell.borders
                 # Horizontal borders go across all columns
-                for border in horiz: 
+                for border in horiz:
                     border.applyBorders(tocells, location=location)
                 # Vertical borders only get applied to the same column
                 for applyto in tocells:
@@ -271,7 +278,7 @@ class Array(Environment):
         isHeader = False
 
         def digest(self, tokens):
-            self.endToken = self.digestUntil(tokens, (Array.CellDelimiter, 
+            self.endToken = self.digestUntil(tokens, (Array.CellDelimiter,
                                                       Array.EndRow))
             if isinstance(self.endToken, Array.CellDelimiter):
                 tokens.next()
@@ -292,12 +299,12 @@ class Array(Environment):
             # Cache the border information.  This must be done before
             # grouping paragraphs since a paragraph might swallow 
             # an hline/vline/cline command.
-            h,v = self.borders
+            h, v = self.borders
 
             # Throw out the border commands, we're done with them
-#           for i in range(len(self)-1, -1, -1):
-#               if isinstance(self[i], Array.BorderCommand):
-#                   self.pop(i)
+            #           for i in range(len(self)-1, -1, -1):
+            #               if isinstance(self[i], Array.BorderCommand):
+            #                   self.pop(i)
 
             self.paragraphs()
 
@@ -317,7 +324,7 @@ class Array(Environment):
             horiz, vert = [], []
 
             # Locate the border control macros at the end of the cell
-            for i in range(len(self)-1, -1, -1):
+            for i in range(len(self) - 1, -1, -1):
                 item = self[i]
                 if item.isElementContentWhitespace:
                     continue
@@ -349,7 +356,6 @@ class Array(Environment):
 
             return horiz, vert
 
-
         @property
         def isBorderOnly(self):
             """ Does this cell exist only for applying borders? """
@@ -362,17 +368,14 @@ class Array(Environment):
                     return False
             return True
 
-
         @property
         def source(self):
             # Don't put paragraphs into math mode arrays
             if self.parentNode is None:
-               # no parentNode, assume mathMode==False
-               return sourceChildren(self, True)
-            return sourceChildren(self, 
-                       par=not(self.parentNode.parentNode.mathMode))
-        
-
+                # no parentNode, assume mathMode==False
+                return sourceChildren(self, True)
+            return sourceChildren(self,
+                                  par=not (self.parentNode.parentNode.mathMode))
 
     class multicolumn(Command):
         """ Column spanning cell """
@@ -385,29 +388,28 @@ class Array(Environment):
 
         def digest(self, tokens):
             Command.digest(self, tokens)
-            #self.paragraphs()
-
+            # self.paragraphs()
 
     def invoke(self, tex):
         if self.macroMode == Macro.MODE_END:
-            self.ownerDocument.context.pop(self) # End of table, row, and cell
+            self.ownerDocument.context.pop(self)  # End of table, row, and cell
             return
-        
+
         Environment.invoke(self, tex)
 
-#!!!
-#
-# Need to handle colspec processing here so that tokens that must 
-# be inserted before and after columns are known
-#
-#!!!
+        # !!!
+        #
+        # Need to handle colspec processing here so that tokens that must
+        # be inserted before and after columns are known
+        #
+        # !!!
         if self.attributes.has_key('colspec'):
             self.colspec = Array.compileColspec(tex, self.attributes['colspec'])
 
-        self.ownerDocument.context.push() # Beginning of cell
+        self.ownerDocument.context.push()  # Beginning of cell
         # Add a phantom row and cell to absorb the appropriate tokens
-        return [self, self.ownerDocument.createElement('ArrayRow'), 
-                      self.ownerDocument.createElement('ArrayCell')]
+        return [self, self.ownerDocument.createElement('ArrayRow'),
+                self.ownerDocument.createElement('ArrayCell')]
 
     def digest(self, tokens):
         Environment.digest(self, tokens)
@@ -448,7 +450,7 @@ class Array(Environment):
                     if colspan > 1:
                         try:
                             cell.colspecStart = self.colspec[c]
-                            cell.colspecEnd = self.colspec[c+colspan-1]
+                            cell.colspecEnd = self.colspec[c + colspan - 1]
                         except IndexError:
                             if hasattr(cell, 'colspecStart'):
                                 del cell.colspecStart
@@ -560,7 +562,7 @@ class Array(Environment):
 
             output.append(ColumnType.columnTypes.get(tok, ColumnType)())
 
-            if tok.lower() in ['p','d']:
+            if tok.lower() in ['p', 'd']:
                 tex.readArgument()
 
             if before:
@@ -590,13 +592,13 @@ class Array(Environment):
         if self.macroMode == Macro.MODE_BEGIN:
             s = []
             argSource = sourceArguments(self)
-            if not argSource: 
+            if not argSource:
                 argSource = ' '
             s.append('%sbegin{%s}%s' % (escape, name, argSource))
             if self.hasChildNodes():
                 for row in self:
                     for cell in row:
-                        s.append(sourceChildren(cell, par=not(self.mathMode)))
+                        s.append(sourceChildren(cell, par=not (self.mathMode)))
                         if cell.endToken is not None:
                             s.append(cell.endToken.source)
                     if row.endToken is not None:
@@ -608,38 +610,49 @@ class Array(Environment):
         if self.macroMode == Macro.MODE_END:
             return '%send{%s}' % (escape, name)
 
+
 class array(Array):
     args = '[ pos:str ] colspec:nox'
     mathMode = True
+
     class nonumber(Command):
         pass
 
+
 class tabular(Array):
     args = '[ pos:str ] colspec:nox'
+
 
 class TabularStar(tabular):
     macroName = 'tabular*'
     args = 'width:dimen [ pos:str ] colspec:nox'
 
+
 class tabularx(Array):
     args = 'width:nox colspec:nox'
 
+
 class tabulary(Array):
     args = 'width:nox colspec:nox'
+
 
 # Style Parameters
 
 class arraycolsep(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class tabcolsep(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class arrayrulewidth(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class doublerulesep(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class arraystretch(Command):
     unicode = '1'

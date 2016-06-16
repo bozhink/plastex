@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-import unittest, sys
+import unittest
 from unittest import TestCase
-from plasTeX.Tokenizer import *
+
 from plasTeX.TeX import *
+from plasTeX.Tokenizer import *
+
 
 class Numbers(TestCase):
-
     def testReadDecimal(self):
         s = TeX()
         s.input(r'-1.0')
@@ -30,7 +31,7 @@ class Numbers(TestCase):
         s = TeX()
         s.input(r'29 pc')
         i = s.readDimen()
-        assert i.pc - 29 < fuzz, i.pc 
+        assert i.pc - 29 < fuzz, i.pc
         s = TeX()
         s.input(r'-.013837in')
         i = s.readDimen()
@@ -50,12 +51,12 @@ class Numbers(TestCase):
 
     def testReadDimen2(self):
         # This is illegal
-#       s = TeX()
-#       s.input(r"'.77pt")
-#       i = s.readDimen()
-#       s = TeX()
-#       s.input(r'"Ccc')
-#       i = s.readDimen()
+        #       s = TeX()
+        #       s.input(r"'.77pt")
+        #       i = s.readDimen()
+        #       s = TeX()
+        #       s.input(r'"Ccc')
+        #       i = s.readDimen()
         s = TeX()
         s.input(r'-,sp')
         i = s.readDimen()
@@ -95,34 +96,34 @@ class Numbers(TestCase):
         s.input(r'65536 sp')
         i = s.readDimen()
         assert i.pt - 1 < fuzz, i.pt
-       
+
     def testReadGlue(self):
         s = TeX()
         s.input(r'0pt plus 1fil')
         i = s.readGlue()
         assert i.pt == 0, i.pt
-        assert i.stretch.fil == 1, i.stretch.fil 
+        assert i.stretch.fil == 1, i.stretch.fil
         assert i.shrink is None, i.shrink
 
         s = TeX()
         s.input(r'0pt plus 1fill')
         i = s.readGlue()
         assert i.pt == 0, i.pt
-        assert i.stretch.fil == 1, i.stretch.fil 
+        assert i.stretch.fil == 1, i.stretch.fil
         assert i.shrink is None, i.shrink
 
         s = TeX()
         s.input(r'0pt plus 1fil minus 1 fil')
         i = s.readGlue()
         assert i.pt == 0, i.pt
-        assert i.stretch.fil == 1, i.stretch.fil 
-        assert i.shrink.fil == 1, i.shrink.fil 
+        assert i.stretch.fil == 1, i.stretch.fil
+        assert i.shrink.fil == 1, i.shrink.fil
 
         s = TeX()
         s.input(r'0pt plus -1fil')
         i = s.readGlue()
         assert i.pt == 0, i.pt
-        assert i.stretch.fil == -1, i.stretch.fil 
+        assert i.stretch.fil == -1, i.stretch.fil
         assert i.shrink is None, i.shrink
 
     def testReadGlue2(self):
@@ -132,24 +133,24 @@ class Numbers(TestCase):
         assert i.pt == 6, i.pt
         assert i.stretch.pt == 2, i.stretch.pt
         assert i.shrink.pt == 2, i.shrink.pt
-        
+
         t = TeX()
         t.input(r'6pt plus 2pt minus 2pt 1.2pt plus -1.fil-1.234pt\foo')
         i = t.readGlue()
         j = t.readGlue()
         k = t.readGlue()
 
-#       print i.source
+        #       print i.source
         assert i.pt == 6, i.pt
         assert i.stretch.pt == 2, i.stretch.pt
         assert i.shrink.pt == 2, i.shrink.pt
 
-#       print j.source
+        #       print j.source
         assert j.pt == 1.2, i.pt
         assert j.stretch.fil == -1, j.stretch.fil
         assert j.shrink is None
-        
-#       print k.source
+
+        #       print k.source
         assert k.pt == -1.234, k.pt
         assert k.stretch is None
         assert k.shrink is None
@@ -157,8 +158,8 @@ class Numbers(TestCase):
         tokens = [x for x in t.itertokens()]
         assert tokens == [EscapeSequence('foo')], tokens
 
-class Parameters(TestCase):
 
+class Parameters(TestCase):
     def testParameters(self):
         t = TeX()
         t.input(r'\newcount\foo\foo=\tolerance')
@@ -172,14 +173,14 @@ class Parameters(TestCase):
         t.parse()
         foo = t.ownerDocument.context['foo'].value
         tolerance = t.ownerDocument.context['tolerance'].value
-        assert foo == (7*tolerance), '"%s" != "%s"' % (foo, 7*tolerance)
+        assert foo == (7 * tolerance), '"%s" != "%s"' % (foo, 7 * tolerance)
 
         t = TeX()
         t.input(r'\newcount\foo\foo=-3\tolerance')
         t.parse()
         foo = t.ownerDocument.context['foo'].value
         tolerance = t.ownerDocument.context['tolerance'].value
-        assert foo == (-3*tolerance), '"%s" != "%s"' % (foo, -3*tolerance)
+        assert foo == (-3 * tolerance), '"%s" != "%s"' % (foo, -3 * tolerance)
 
     def testDimenParameters(self):
         t = TeX()
@@ -188,21 +189,21 @@ class Parameters(TestCase):
         foo = t.ownerDocument.context['foo'].value
         hsize = t.ownerDocument.context['hsize'].value
         assert foo == hsize, '"%s" != "%s"' % (foo, hsize)
-        
+
         t = TeX()
         t.input(r'\newdimen\foo\foo=7.6\hsize')
         t.parse()
         foo = t.ownerDocument.context['foo'].value
         hsize = t.ownerDocument.context['hsize'].value
-        assert foo == (7.6*hsize), '"%s" != "%s"' % (foo, 7.6*hsize)
-        
+        assert foo == (7.6 * hsize), '"%s" != "%s"' % (foo, 7.6 * hsize)
+
         t = TeX()
         t.input(r'\newdimen\foo\foo=-4\hsize')
         t.parse()
         foo = t.ownerDocument.context['foo'].value
         hsize = t.ownerDocument.context['hsize'].value
-        assert foo == (-4*hsize), '"%s" != "%s"' % (foo, (-4*hsize))
-        
+        assert foo == (-4 * hsize), '"%s" != "%s"' % (foo, (-4 * hsize))
+
     def testGlueParameters(self):
         t = TeX()
         t.input(r'\newskip\foo\foo=\baselineskip')
@@ -210,20 +211,21 @@ class Parameters(TestCase):
         foo = t.ownerDocument.context['foo'].value
         baselineskip = t.ownerDocument.context['baselineskip'].value
         assert foo == baselineskip, '"%s" != "%s"' % (foo, baselineskip)
-        
+
         t = TeX()
         t.input(r'\newskip\foo\foo=7.6\baselineskip')
         t.parse()
         foo = t.ownerDocument.context['foo'].value
         baselineskip = t.ownerDocument.context['baselineskip'].value
-        assert foo == (7.6*baselineskip), '"%s" != "%s"' % (foo, 7.6*baselineskip)
-        
+        assert foo == (7.6 * baselineskip), '"%s" != "%s"' % (foo, 7.6 * baselineskip)
+
         t = TeX()
         t.input(r'\newskip\foo\foo=-4\baselineskip')
         t.parse()
         foo = t.ownerDocument.context['foo'].value
         baselineskip = t.ownerDocument.context['baselineskip'].value
-        assert foo == (-4*baselineskip), '"%s" != "%s"' % (foo, (-4*baselineskip))
+        assert foo == (-4 * baselineskip), '"%s" != "%s"' % (foo, (-4 * baselineskip))
+
 
 if __name__ == '__main__':
     unittest.main()

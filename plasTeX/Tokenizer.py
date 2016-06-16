@@ -1,36 +1,40 @@
 #!/usr/bin/env python
 
-import string
+from StringIO import StringIO as UnicodeStringIO
+
 from DOM import Node, Text
 from plasTeX import encoding
-from StringIO import StringIO as UnicodeStringIO
-try: from cStringIO import StringIO
-except: from StringIO import StringIO
+
+try:
+    from cStringIO import StringIO
+except:
+    from StringIO import StringIO
 
 # Default TeX categories
 DEFAULT_CATEGORIES = [
-   '\\',  # 0  - Escape character
-   '{',   # 1  - Beginning of group
-   '}',   # 2  - End of group
-   '$',   # 3  - Math shift
-   '&',   # 4  - Alignment tab
-   '\n',  # 5  - End of line
-   '#',   # 6  - Parameter
-   '^',   # 7  - Superscript
-   '_',   # 8  - Subscript
-   '\x00',# 9  - Ignored character
-   ' \t\r\f', # 10 - Space
-   encoding.stringletters() + '@', # - Letter
-   '',    # 12 - Other character - This isn't explicitly defined.  If it
-          #                        isn't any of the other categories, then
-          #                        it's an "other" character.
-   '~',   # 13 - Active character
-   '%',   # 14 - Comment character
-   ''     # 15 - Invalid character
+    '\\',  # 0  - Escape character
+    '{',  # 1  - Beginning of group
+    '}',  # 2  - End of group
+    '$',  # 3  - Math shift
+    '&',  # 4  - Alignment tab
+    '\n',  # 5  - End of line
+    '#',  # 6  - Parameter
+    '^',  # 7  - Superscript
+    '_',  # 8  - Subscript
+    '\x00',  # 9  - Ignored character
+    ' \t\r\f',  # 10 - Space
+    encoding.stringletters() + '@',  # - Letter
+    '',  # 12 - Other character - This isn't explicitly defined.  If it
+    #                        isn't any of the other categories, then
+    #                        it's an "other" character.
+    '~',  # 13 - Active character
+    '%',  # 14 - Comment character
+    ''  # 15 - Invalid character
 ]
 
 VERBATIM_CATEGORIES = [''] * 16
 VERBATIM_CATEGORIES[11] = encoding.stringletters()
+
 
 class Token(Text):
     """ Base class for all TeX tokens """
@@ -54,9 +58,9 @@ class Token(Text):
     CC_INVALID = 15
 
     TOKEN_SLOTS = __slots__ = Text.TEXT_SLOTS
-    
-    catcode = None       # TeX category code
-    macroName = None     # Macro to invoke in place of this token
+
+    catcode = None  # TeX category code
+    macroName = None  # Macro to invoke in place of this token
 
     def __repr__(self):
         return self.source
@@ -85,6 +89,7 @@ class EscapeSequence(Token):
 
     """
     catcode = Token.CC_ESCAPE
+
     @property
     def source(self):
         if self == 'par':
@@ -93,10 +98,13 @@ class EscapeSequence(Token):
         if '::' in self:
             return self.split('::').pop()
         return '\\%s ' % self
+
     @property
     def macroName(self):
         return self
+
     __slots__ = Token.TOKEN_SLOTS
+
 
 class BeginGroup(Token):
     """ Beginning of a TeX group """
@@ -104,57 +112,69 @@ class BeginGroup(Token):
     macroName = 'bgroup'
     __slots__ = Token.TOKEN_SLOTS
 
+
 class EndGroup(Token):
     """ Ending of a TeX group """
     catcode = Token.CC_EGROUP
     macroName = 'egroup'
     __slots__ = Token.TOKEN_SLOTS
 
+
 class MathShift(Token):
     catcode = Token.CC_MATHSHIFT
     macroName = 'active::$'
     __slots__ = Token.TOKEN_SLOTS
+
 
 class Alignment(Token):
     catcode = Token.CC_ALIGNMENT
     macroName = 'active::&'
     __slots__ = Token.TOKEN_SLOTS
 
+
 class EndOfLine(Token):
     catcode = Token.CC_EOL
     isElementContentWhitespace = True
     __slots__ = Token.TOKEN_SLOTS
 
+
 class Parameter(Token):
     catcode = Token.CC_PARAMETER
     __slots__ = Token.TOKEN_SLOTS
+
 
 class Superscript(Token):
     catcode = Token.CC_SUPER
     macroName = 'active::^'
     __slots__ = Token.TOKEN_SLOTS
 
+
 class Subscript(Token):
     catcode = Token.CC_SUB
     macroName = 'active::_'
     __slots__ = Token.TOKEN_SLOTS
+
 
 class Space(Token):
     catcode = Token.CC_SPACE
     isElementContentWhitespace = True
     __slots__ = Token.TOKEN_SLOTS
 
+
 class Letter(Token):
     catcode = Token.CC_LETTER
     __slots__ = Token.TOKEN_SLOTS
+
 
 class Other(Token):
     catcode = Token.CC_OTHER
     __slots__ = Token.TOKEN_SLOTS
 
+
 class Active(Token):
     catcode = Token.CC_ACTIVE
     __slots__ = Token.TOKEN_SLOTS
+
 
 class Comment(Token):
     catcode = Token.CC_COMMENT
@@ -163,8 +183,8 @@ class Comment(Token):
     isElementContentWhitespace = True
     __slots__ = Token.TOKEN_SLOTS
 
-class Tokenizer(object):
 
+class Tokenizer(object):
     # Tokenizer states
     STATE_S = 1
     STATE_M = 2
@@ -208,7 +228,7 @@ class Tokenizer(object):
         elif isinstance(source, basestring):
             source = StringIO(source)
             self.filename = '<string>'
-        elif isinstance(source, (tuple,list)):
+        elif isinstance(source, (tuple, list)):
             self.pushTokens(source)
             source = StringIO('')
             self.filename = '<tokens>'
@@ -216,11 +236,11 @@ class Tokenizer(object):
             self.filename = source.name
         self.seek = source.seek
         self.read = source.read
-#       self.readline = source.readline
+        #       self.readline = source.readline
         self.tell = source.tell
         self.lineNumber = 1
 
-# There seems to be a problem with readline in Python 2.4 !!!
+    # There seems to be a problem with readline in Python 2.4 !!!
     def readline(self):
         read = self.read
         buffer = self._charBuffer
@@ -279,12 +299,14 @@ class Tokenizer(object):
                 if char == token:
                     char = read(1)
                     num = ord(char)
-                    if num >= 64: token = chr(num-64)
-                    else: token = chr(num+64)
+                    if num >= 64:
+                        token = chr(num - 64)
+                    else:
+                        token = chr(num + 64)
                     code = whichCode(token)
 
                 else:
-                    seek(-1,1)
+                    seek(-1, 1)
 
             # Just go to the next character if you see one of these...
             if code == CC_IGNORED or code == CC_INVALID:
@@ -378,7 +400,7 @@ class Tokenizer(object):
 
             # Whitespace
             elif code == CC_SPACE:
-                if self.state  == STATE_S or self.state == STATE_N:
+                if self.state == STATE_S or self.state == STATE_N:
                     continue
                 self.state = STATE_S
                 token = Space(u' ')
@@ -393,7 +415,7 @@ class Tokenizer(object):
                     token = Space(' ')
                     code = CC_SPACE
                     self.state = STATE_N
-                elif state == STATE_N: 
+                elif state == STATE_N:
                     # ord(token) != 10 is the same as saying token != '\n'
                     # but it is much faster.
                     if ord(token) != 10:
@@ -412,47 +434,48 @@ class Tokenizer(object):
                 self.state = STATE_M
 
                 for token in charIter:
- 
+
                     if token.catcode == CC_LETTER:
                         word = [token]
                         for t in charIter:
                             if t.catcode == CC_LETTER:
-                                word.append(t) 
+                                word.append(t)
                             else:
                                 pushChar(t)
                                 break
                         token = EscapeSequence(''.join(word))
 
                     elif token.catcode == CC_EOL:
-                        #pushChar(token)
-                        #token = EscapeSequence()
+                        # pushChar(token)
+                        # token = EscapeSequence()
                         token = Space(' ')
                         self.state = STATE_S
 
                     else:
                         token = EscapeSequence(token)
-#
-# Because we can implement macros both in LaTeX and Python, we don't 
-# always want the whitespace to be eaten.  For example, implementing
-# \chardef\%=`% would be \char{`%} in TeX, but in Python it's just 
-# another macro class that would eat whitspace incorrectly.  So we
-# have to do this kind of thing in the parse() method of Macro.
-#
+                    #
+                    # Because we can implement macros both in LaTeX and Python, we don't
+                    # always want the whitespace to be eaten.  For example, implementing
+                    # \chardef\%=`% would be \char{`%} in TeX, but in Python it's just
+                    # another macro class that would eat whitspace incorrectly.  So we
+                    # have to do this kind of thing in the parse() method of Macro.
+                    #
                     if token.catcode != CC_EOL:
-# HACK: I couldn't get the parse() thing to work so I'm just not
-#       going to parse whitespace after EscapeSequences that end in
-#       non-letter characters as a half-assed solution.
+                        # HACK: I couldn't get the parse() thing to work so I'm just not
+                        #       going to parse whitespace after EscapeSequences that end in
+                        #       non-letter characters as a half-assed solution.
                         if token[-1] in encoding.stringletters():
                             # Absorb following whitespace
                             self.state = STATE_S
 
                     break
 
-                else: token = EscapeSequence()
+                else:
+                    token = EscapeSequence()
 
                 # Check for any \let aliases
                 token = context.lets.get(token, token)
-                
+
                 # TODO: This action should be generalized so that the 
                 #       tokens are processed recursively
                 if token is not token and token.catcode == CC_COMMENT:
@@ -462,7 +485,7 @@ class Tokenizer(object):
                     continue
 
             elif code == CC_COMMENT:
-                self.readline() 
+                self.readline()
                 self.lineNumber += 1
                 self.state = STATE_N
                 continue

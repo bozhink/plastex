@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-import re, string, os.path
+import os.path
+import re
+import string
+
 
 class Filenames(object):
-
     def __init__(self, spec, charsub=[], vars={}, extension='', invalid={}):
         """
         Generate filenames based on the `spec' and using the given vars
@@ -72,7 +74,7 @@ class Filenames(object):
         Returns:
         generator that creates filenames
     
-        """      
+        """
         self.files = self.parseFilenames(spec)
         self.charsub = charsub
         self.vars = vars
@@ -89,16 +91,16 @@ class Filenames(object):
         spec = re.sub(r'\[\s*', r'[', spec)
         spec = re.sub(r'\s*\]', r']', spec)
         spec = re.sub(r'\s*,\s*', r',', spec)
-    
+
         files = ['']
         spec = iter(spec)
         for char in spec:
-    
+
             # Spaces mark a division between names
             if not char.strip():
-                 files.append('')
-                 continue
-    
+                files.append('')
+                continue
+
             # Check for alternatives
             elif char == '[':
                 options = [files[-1]]
@@ -111,16 +113,16 @@ class Filenames(object):
                     options[-1] += char
                 files[-1] = [x for x in options if x]
                 continue
-            
+
             # Append the character to the current filename
             if isinstance(files[-1], list):
                 for i, item in enumerate(files[-1]):
                     files[-1][i] += char
             else:
                 files[-1] += char
-    
+
         files = [x for x in files if x]
-    
+
         return files
 
     def __call__(self):
@@ -140,7 +142,7 @@ class Filenames(object):
     def _newFilename(self):
         """ Generator that generates new filenames """
         g = self.vars.copy()
-    
+
         # Split filenames into static and wildcard groups
         static = []
         wildcard = []
@@ -155,13 +157,13 @@ class Filenames(object):
         # template given is a wildcard template.
         if not wildcard and static:
             wildcard = [static.pop()]
-    
+
         # Initialize file number counter
         num = 1
-    
+
         # Locate all key names and formats in the string
         keysre = re.compile(r'\$\{(\w+)(?:\.(\d+))?}')
-        
+
         # Return static filenames
         for item in static:
             currentns = self.vars.copy()
@@ -198,7 +200,7 @@ class Filenames(object):
                     yield result
             except KeyError, key:
                 continue
-                
+
         # We've reached the wildcard stage.  The wildcard gives us
         # multiple alternatives of filenames to choose from.  Keep trying
         # each one with the current namespace until one works.
@@ -250,5 +252,5 @@ class Filenames(object):
                 # one, we better just bail out.
                 if passes > 100:
                     break
-    
+
         raise ValueError, 'Filename could not be created.'

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-import unittest, sys
+import unittest
 from unittest import TestCase
-from plasTeX import Macro, Environment, Node, Command
-from plasTeX.TeX import TeX
+
+from plasTeX import Environment, Node, Command
 from plasTeX.Context import Context
+from plasTeX.TeX import TeX
+
 
 class ContextGenerated(TestCase):
     def testNewcommand(self):
@@ -13,14 +15,14 @@ class ContextGenerated(TestCase):
         c.newcommand('bar', 0, r'\it\bf')
         keys = c.keys()
         keys.sort()
-        assert keys == ['bar','foo'], keys
+        assert keys == ['bar', 'foo'], keys
 
 
 class NC(TestCase):
-
     def testNewcommand(self):
         s = TeX()
-        s.input(r'\newcommand\mycommand[2][optional]{\itshape{#1:#2}}\newcommand{ \foo }{{this is foo}}\mycommand[hi]{{\foo}!!!}')
+        s.input(
+            r'\newcommand\mycommand[2][optional]{\itshape{#1:#2}}\newcommand{ \foo }{{this is foo}}\mycommand[hi]{{\foo}!!!}')
         res = [x for x in s]
         text = [x for x in res if x.nodeType == Node.TEXT_NODE]
         expected = list('hi:this is foo!!!')
@@ -61,8 +63,8 @@ class NC(TestCase):
         output = [x for x in s]
         assert '<' in s.ownerDocument.context.categories[2]
 
-class NewCommands(TestCase):
 
+class NewCommands(TestCase):
     def setUp(self):
         self.macros = {}
 
@@ -100,7 +102,8 @@ class NewCommands(TestCase):
             s.ownerDocument.context[key] = value
         output = [x for x in s]
         assert s.ownerDocument.context['mycommand'].definition == list('#1:#2')
-        assert s.ownerDocument.context['mycommand'].opt == list('opt'), '"%s" != "opt"' % (s.ownerDocument.context['mycommand'].opt)
+        assert s.ownerDocument.context['mycommand'].opt == list('opt'), '"%s" != "opt"' % (
+            s.ownerDocument.context['mycommand'].opt)
         text = [x for x in output if x.nodeType == Node.TEXT_NODE]
         assert text == list('opt:barfoo:bar'), text
 
@@ -111,7 +114,7 @@ class NewCommands(TestCase):
             s.ownerDocument.context[key] = value
         output = [x for x in s]
         assert type(output[2]) == s.ownerDocument.context['it']
-        assert output[-3:-1] == ['h','i']
+        assert output[-3:-1] == ['h', 'i']
 
     def testSimpleNewEnvironmentWithArgs(self):
         s = TeX()
@@ -128,7 +131,8 @@ class NewCommands(TestCase):
 
     def testSimpleNewEnvironmentWithOptional(self):
         s = TeX()
-        s.input(r'\newenvironment{myenv}[2][opt]{#1:#2}{;}\begin{myenv}{foo}hi\end{myenv}\begin{myenv}[one]{blah}bye\end{myenv}')
+        s.input(
+            r'\newenvironment{myenv}[2][opt]{#1:#2}{;}\begin{myenv}{foo}hi\end{myenv}\begin{myenv}[one]{blah}bye\end{myenv}')
         for key, value in self.macros.items():
             s.ownerDocument.context[key] = value
         output = [x for x in s]
@@ -142,7 +146,8 @@ class NewCommands(TestCase):
 
     def testNewEnvironment(self):
         s = TeX()
-        s.input(r'\newenvironment{myenv}{\begin{description}}{\end{description}}before:\begin{myenv}hi\end{myenv}:after')
+        s.input(
+            r'\newenvironment{myenv}{\begin{description}}{\end{description}}before:\begin{myenv}hi\end{myenv}:after')
         for key, value in self.macros.items():
             s.ownerDocument.context[key] = value
         output = [x for x in s]
@@ -183,7 +188,7 @@ class NewCommands(TestCase):
         s = TeX()
         s.input(r'\let\foo=\it\foo')
         output = [x for x in s]
-        assert type(output[1]) == s.ownerDocument.context['it'] 
+        assert type(output[1]) == s.ownerDocument.context['it']
 
         s = TeX()
         s.input(r'\let\bgroup={\bgroup')
@@ -198,16 +203,15 @@ class NewCommands(TestCase):
 
 
 class Python(TestCase):
-
     def testStringCommand(self):
         class figurename(Command): unicode = 'Figure'
+
         s = TeX()
         s.input(r'\figurename')
         s.ownerDocument.context['figurename'] = figurename
         output = [x for x in s]
         assert output[0].unicode == 'Figure', output
-       
+
 
 if __name__ == '__main__':
     unittest.main()
-

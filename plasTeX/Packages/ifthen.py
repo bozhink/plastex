@@ -9,8 +9,9 @@ be done properly.
 
 from plasTeX import Command
 
+
 class ifthenelse(Command):
-    args = 'test:nox then:nox else' 
+    args = 'test:nox then:nox else'
 
     class _not(Command):
         macroName = 'not'
@@ -51,17 +52,18 @@ class ifthenelse(Command):
     class boolean(Command):
         args = 'name:str'
 
+
 class newboolean(Command):
     args = 'name:str'
+
 
 class provideboolean(Command):
     args = 'name:str'
 
+
 class setboolean(Command):
     args = 'name:str value:str'
 
+
 class whiledo(Command):
     args = 'test:nox operations'
-
-
-

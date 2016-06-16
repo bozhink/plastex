@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import re
-from plasTeX.Renderers.PageTemplate import Renderer as _Renderer
+
 from plasTeX import Command
+from plasTeX.Renderers.PageTemplate import Renderer as _Renderer
+
 try:
     from lxml import etree
 except ImportError:
@@ -9,6 +11,7 @@ except ImportError:
 else:
     have_lxml = True
 xns = {'d': 'http://docbook.org/ns/docbook'}
+
 
 def drop_tag(elem):
     """
@@ -33,6 +36,7 @@ def drop_tag(elem):
     index = parent.index(elem)
     parent[index:index + 1] = elem[:]
 
+
 def clean_para(tree, name):
     for elem in tree.findall('.//d:%s' % name, namespaces=xns):
         e = elem.findall('d:para', namespaces=xns)
@@ -40,6 +44,7 @@ def clean_para(tree, name):
             drop_tag(e[0])
 
     return tree
+
 
 def get_see(term):
     see = None
@@ -53,6 +58,7 @@ def get_see(term):
 
     return term, see, seealso
 
+
 def parse_indexentry(s):
     term = s
     sortstr = None
@@ -60,6 +66,7 @@ def parse_indexentry(s):
         term, sortstr = term.split('@')
     term, see, seealso = get_see(term)
     return (term, sortstr, see, seealso)
+
 
 class index(Command):
     args = 'argument:str'
@@ -70,7 +77,7 @@ class index(Command):
         if entry.find('!') != -1:
             primary, secondary = entry.split('!')
 
-            primary, prisort, see, seealso= parse_indexentry(primary)
+            primary, prisort, see, seealso = parse_indexentry(primary)
             if see or seealso:
                 secondary, secsort, _, _ = parse_indexentry(secondary)
             else:
@@ -80,17 +87,18 @@ class index(Command):
 
         self.data = {
             'primary': primary,
-            'secondary':secondary,
+            'secondary': secondary,
             'prisort': prisort,
             'secsort': secsort,
             'see': see,
             'seealso': seealso,
-            }
+        }
+
 
 class DocBook(_Renderer):
     """ Renderer for DocBook documents """
     fileExtension = '.xml'
-    imageTypes = ['.png','.jpg','.jpeg','.gif']
+    imageTypes = ['.png', '.jpg', '.jpeg', '.gif']
     vectorImageTypes = ['.svg']
 
     def cleanup(self, document, files, postProcess=None):
@@ -105,7 +113,7 @@ class DocBook(_Renderer):
                 tree = clean_para(tree, name)
             s = etree.tostring(tree)
         else:
-            s = re.sub(r'</partintro>\s*<partintro>','', s, flags=re.I)
+            s = re.sub(r'</partintro>\s*<partintro>', '', s, flags=re.I)
             s = re.sub(r'<para>\s*(<articleinfo>)', r'\1', s, flags=re.I)
             s = re.sub(r'(</articleinfo>)\s*</para>', r'\1', s, flags=re.I)
             s = re.sub(r'<para>\s*</para>', '', s, flags=re.I)
@@ -115,5 +123,6 @@ class DocBook(_Renderer):
                 s = re.sub(r'</para>\s*(</%s>)' % name, r'\1', s, flags=re.I)
 
         return s
+
 
 Renderer = DocBook

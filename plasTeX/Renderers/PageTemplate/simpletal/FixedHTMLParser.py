@@ -34,12 +34,10 @@
 		Module Dependencies: logging, simpleTALES, simpleTALTemplates
 """
 
-from plasTeX.Renderers.PageTemplate import simpletal
 import HTMLParser
 
 
-class HTMLParser (HTMLParser.HTMLParser):
-	def unescape(self, s):
-		# Just return the data - we don't partially unescaped data!
-		return s
-		
+class HTMLParser(HTMLParser.HTMLParser):
+    def unescape(self, s):
+        # Just return the data - we don't partially unescaped data!
+        return s

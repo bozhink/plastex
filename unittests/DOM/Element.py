@@ -2,10 +2,11 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.DOM import *
 
-class ElementTest(TestCase):
 
+class ElementTest(TestCase):
     def testTagName(self):
         doc = Document()
         one = doc.createElement('one')
@@ -53,4 +54,3 @@ class ElementTest(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

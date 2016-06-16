@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-import unittest, re
+import unittest
 from unittest import TestCase
+
 from plasTeX.TeX import TeX
-from plasTeX import Macro
+
 
 class Verbatim(TestCase):
-
     def testVerbatim(self):
         intext = 'line one\nline    two'
         input = 'hi \\begin{verbatim}\n%s\n\\end{verbatim} bye' % intext
@@ -40,4 +40,3 @@ class Verbatim(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

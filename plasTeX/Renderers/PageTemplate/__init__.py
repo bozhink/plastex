@@ -9,7 +9,13 @@ support for your own templating engines.
 
 """
 
-import sys, os, re, plasTeX, shutil, string
+import os
+import re
+import shutil
+import string
+import sys
+
+import plasTeX
 from plasTeX.Renderers import Renderer as BaseRenderer
 from plasTeX.Renderers.PageTemplate.simpletal import simpleTAL, simpleTALES
 from plasTeX.Renderers.PageTemplate.simpletal.simpleTALES import Context as TALContext
@@ -18,18 +24,21 @@ from plasTeX.Renderers.PageTemplate.simpletal.simpleTALUtils import FastStringOu
 log = plasTeX.Logging.getLogger()
 
 # Support for Jinja2 templates
-try: 
+try:
 
     from jinja2 import Template as Jinja2Template
+
+
     def jinja2template(s, encoding='utf8'):
         def renderjinja2(obj, s=s):
-            tvars = {'here':obj, 
-                     'obj':obj,
-                     'container':obj.parentNode,
-                     'config':obj.ownerDocument.config,
-                     'context':obj.ownerDocument.context,
-                     'templates':obj.renderer}
-            return Jinja2Template(s).render(tvars) 
+            tvars = {'here': obj,
+                     'obj': obj,
+                     'container': obj.parentNode,
+                     'config': obj.ownerDocument.config,
+                     'context': obj.ownerDocument.context,
+                     'templates': obj.renderer}
+            return Jinja2Template(s).render(tvars)
+
         return renderjinja2
 
 except ImportError:
@@ -37,31 +46,40 @@ except ImportError:
     def jinja2template(s, encoding='utf8'):
         def renderjinja2(obj):
             return unicode(s, encoding)
+
         return renderjinja2
+
 
 # Support for Python string templates
 def stringtemplate(s, encoding='utf8'):
     template = string.Template(unicode(s, encoding))
+
     def renderstring(obj):
-        tvars = {'here':obj, 'self':obj, 'container':obj.parentNode,
-                 'config':obj.ownerDocument.config, 'template':template,
-                 'templates':obj.renderer, 'context':obj.ownerDocument.context}
+        tvars = {'here': obj, 'self': obj, 'container': obj.parentNode,
+                 'config': obj.ownerDocument.config, 'template': template,
+                 'templates': obj.renderer, 'context': obj.ownerDocument.context}
         return unicode(template.substitute(tvars))
+
     return renderstring
+
 
 # Support for Python string interpolations
 def pythontemplate(s, encoding='utf8'):
     template = s
+
     def renderpython(obj):
-        tvars = {'here':obj, 'self':obj, 'container':obj.parentNode,
-                 'config':obj.ownerDocument.config, 'template':template,
-                 'templates':obj.renderer, 'context':obj.ownerDocument.context}
+        tvars = {'here': obj, 'self': obj, 'container': obj.parentNode,
+                 'config': obj.ownerDocument.config, 'template': template,
+                 'templates': obj.renderer, 'context': obj.ownerDocument.context}
         return unicode(template, encoding) % tvars
+
     return renderpython
+
 
 # Support for ZPT HTML and XML templates
 def htmltemplate(s, encoding='utf8'):
     template = simpleTAL.compileHTMLTemplate(s)
+
     def renderhtml(obj):
         context = TALContext(allowPythonPath=1)
         context.addGlobal('here', obj)
@@ -74,10 +92,13 @@ def htmltemplate(s, encoding='utf8'):
         output = StringIO()
         template.expand(context, output, encoding)
         return unicode(output.getvalue(), encoding)
+
     return renderhtml
+
 
 def xmltemplate(s, encoding='utf8'):
     template = simpleTAL.compileXMLTemplate(s)
+
     def renderxml(obj):
         context = TALContext(allowPythonPath=1)
         context.addGlobal('here', obj)
@@ -90,24 +111,31 @@ def xmltemplate(s, encoding='utf8'):
         output = StringIO()
         template.expand(context, output, encoding, docType=None, suppressXMLDeclaration=1)
         return unicode(output.getvalue(), encoding)
+
     return renderxml
 
+
 # Support for Cheetah templates
-try: 
+try:
 
     from Cheetah.Template import Template as CheetahTemplate
     from Cheetah.Filters import Filter as CheetahFilter
+
+
     class CheetahUnicode(CheetahFilter):
         def filter(self, val, encoding='utf-8', **kw):
             return unicode(val).encode(encoding)
+
+
     def cheetahtemplate(s, encoding='utf8'):
         def rendercheetah(obj, s=s):
-            tvars = {'here':obj, 'container':obj.parentNode,
-                     'config':obj.ownerDocument.config,
-                     'context':obj.ownerDocument.context,
-                     'templates':obj.renderer}
-            return CheetahTemplate(source=s, searchList=[tvars], 
+            tvars = {'here': obj, 'container': obj.parentNode,
+                     'config': obj.ownerDocument.config,
+                     'context': obj.ownerDocument.context,
+                     'templates': obj.renderer}
+            return CheetahTemplate(source=s, searchList=[tvars],
                                    filter=CheetahUnicode).respond()
+
         return rendercheetah
 
 except ImportError:
@@ -115,23 +143,27 @@ except ImportError:
     def cheetahtemplate(s, encoding='utf8'):
         def rendercheetah(obj):
             return unicode(s, encoding)
+
         return rendercheetah
 
 # Support for Kid templates
-try: 
+try:
 
     from kid import Template as KidTemplate
+
 
     def kidtemplate(s, encoding='utf8'):
         # Add namespace py: in
         s = '<div xmlns:py="http://purl.org/kid/ns#" py:strip="True">%s</div>' % s
+
         def renderkid(obj, s=s):
-            tvars = {'here':obj, 'container':obj.parentNode, 
-                     'config':obj.ownerDocument.config,
-                     'context':obj.ownerDocument.context,
-                     'templates':obj.renderer}
-            return unicode(KidTemplate(source=s, 
-                   **tvars).serialize(encoding=encoding, fragment=1), encoding)
+            tvars = {'here': obj, 'container': obj.parentNode,
+                     'config': obj.ownerDocument.config,
+                     'context': obj.ownerDocument.context,
+                     'templates': obj.renderer}
+            return unicode(KidTemplate(source=s,
+                                       **tvars).serialize(encoding=encoding, fragment=1), encoding)
+
         return renderkid
 
 except ImportError:
@@ -139,53 +171,64 @@ except ImportError:
     def kidtemplate(s, encoding='utf8'):
         def renderkid(obj):
             return unicode(s, encoding)
+
         return renderkid
 
 # Support for Genshi templates
-try: 
+try:
 
     from genshi.template import MarkupTemplate as GenshiTemplate
     from genshi.template import TextTemplate as GenshiTextTemplate
     from genshi.core import Markup
 
+
     def markup(obj):
         return Markup(unicode(obj))
+
 
     def genshixmltemplate(s, encoding='utf8'):
         # Add namespace py: in
         s = '<div xmlns:py="http://genshi.edgewall.org/" py:strip="True">%s</div>' % s
         template = GenshiTemplate(s)
+
         def rendergenshixml(obj):
-            tvars = {'here':obj, 'container':obj.parentNode, 'markup':markup,
-                     'config':obj.ownerDocument.config, 'template':template,
-                     'context':obj.ownerDocument.context,
-                     'templates':obj.renderer}
-            return unicode(template.generate(**tvars).render(method='xml', 
-                           encoding=encoding), encoding)
+            tvars = {'here': obj, 'container': obj.parentNode, 'markup': markup,
+                     'config': obj.ownerDocument.config, 'template': template,
+                     'context': obj.ownerDocument.context,
+                     'templates': obj.renderer}
+            return unicode(template.generate(**tvars).render(method='xml',
+                                                             encoding=encoding), encoding)
+
         return rendergenshixml
+
 
     def genshihtmltemplate(s, encoding='utf8'):
         # Add namespace py: in
         s = '<div xmlns:py="http://genshi.edgewall.org/" py:strip="True">%s</div>' % s
         template = GenshiTemplate(s)
+
         def rendergenshihtml(obj):
-            tvars = {'here':obj, 'container':obj.parentNode, 'markup':markup,
-                     'config':obj.ownerDocument.config, 'template':template,
-                     'context':obj.ownerDocument.context,
-                     'templates':obj.renderer}
-            return unicode(template.generate(**tvars).render(method='html', 
-                           encoding=encoding), encoding)
+            tvars = {'here': obj, 'container': obj.parentNode, 'markup': markup,
+                     'config': obj.ownerDocument.config, 'template': template,
+                     'context': obj.ownerDocument.context,
+                     'templates': obj.renderer}
+            return unicode(template.generate(**tvars).render(method='html',
+                                                             encoding=encoding), encoding)
+
         return rendergenshihtml
+
 
     def genshitexttemplate(s, encoding='utf8'):
         template = GenshiTextTemplate(s)
+
         def rendergenshitext(obj):
-            tvars = {'here':obj, 'container':obj.parentNode, 'markup':markup,
-                     'config':obj.ownerDocument.config, 'template':template,
-                     'context':obj.ownerDocument.context,
-                     'templates':obj.renderer}
-            return unicode(template.generate(**tvars).render(method='text', 
-                           encoding=encoding), encoding)
+            tvars = {'here': obj, 'container': obj.parentNode, 'markup': markup,
+                     'config': obj.ownerDocument.config, 'template': template,
+                     'context': obj.ownerDocument.context,
+                     'templates': obj.renderer}
+            return unicode(template.generate(**tvars).render(method='text',
+                                                             encoding=encoding), encoding)
+
         return rendergenshitext
 
 except ImportError:
@@ -193,16 +236,21 @@ except ImportError:
     def genshixmltemplate(s, encoding='utf8'):
         def rendergenshixml(obj):
             return unicode(s, encoding)
+
         return rendergenshixml
+
 
     def genshihtmltemplate(s, encoding='utf8'):
         def rendergenshihtml(obj):
             return unicode(s, encoding)
+
         return rendergenshihtml
+
 
     def genshitexttemplate(s, encoding='utf8'):
         def rendergenshitext(obj):
             return unicode(s, encoding)
+
         return rendergenshitext
 
 
@@ -224,12 +272,14 @@ def copytree(src, dest, symlink=None):
                 os.symlink(os.readlink(srcpath), destpath)
             elif not os.path.isdir(destpath):
                 os.makedirs(destpath)
-                try: 
+                try:
                     shutil.copymode(srcpath, destpath)
-                except: pass
-                try: 
+                except:
+                    pass
+                try:
                     shutil.copystat(srcpath, destpath)
-                except: pass
+                except:
+                    pass
         for f in files:
             if f.startswith('.'):
                 continue
@@ -242,14 +292,17 @@ def copytree(src, dest, symlink=None):
             else:
                 shutil.copy2(srcpath, destpath)
 
+
 class TemplateEngine(object):
     def __init__(self, ext, function):
-        if not isinstance(ext, (list,tuple)):
+        if not isinstance(ext, (list, tuple)):
             ext = [ext]
         self.ext = ext
         self.function = function
+
     def compile(self, *args, **kwargs):
         return self.function(*args, **kwargs)
+
 
 class PageTemplate(BaseRenderer):
     """ Renderer for page template based documents """
@@ -261,7 +314,7 @@ class PageTemplate(BaseRenderer):
     def __init__(self, *args, **kwargs):
         BaseRenderer.__init__(self, *args, **kwargs)
         self.engines = {}
-        htmlexts = ['.html','.htm','.xhtml','.xhtm','.zpt','.pt']
+        htmlexts = ['.html', '.htm', '.xhtml', '.xhtm', '.zpt', '.pt']
         self.registerEngine('pt', None, htmlexts, htmltemplate)
         self.registerEngine('zpt', None, htmlexts, htmltemplate)
         self.registerEngine('zpt', 'xml', '.xml', xmltemplate)
@@ -306,7 +359,7 @@ class PageTemplate(BaseRenderer):
         node -- the Text node to process
 
         """
-        if not(getattr(node, 'isMarkup', None)):
+        if not (getattr(node, 'isMarkup', None)):
             node = node.replace('&', '&amp;')
             node = node.replace('<', '&lt;')
             node = node.replace('>', '&gt;')
@@ -332,7 +385,7 @@ class PageTemplate(BaseRenderer):
             themes.append(os.path.join(cwd, 'Themes', themename))
 
             # Load templates configured by the environment variable
-            templates = os.environ.get('%sTEMPLATES' % cls.__name__,'')
+            templates = os.environ.get('%sTEMPLATES' % cls.__name__, '')
             for path in [x.strip() for x in templates.split(os.pathsep) if x.strip()]:
                 log.info('Importing templates from %s' % path)
                 self.importDirectory(path)
@@ -346,7 +399,7 @@ class PageTemplate(BaseRenderer):
 
                 extensions = []
                 for e in self.engines.values():
-                    extensions += e.ext + [x+'s' for x in e.ext]
+                    extensions += e.ext + [x + 's' for x in e.ext]
 
                 if document.config['general']['copy-theme-extras']:
                     # Copy all theme extras
@@ -354,11 +407,11 @@ class PageTemplate(BaseRenderer):
                     os.chdir(theme)
                     for item in os.listdir('.'):
                         if os.path.isdir(item):
-                            if not os.path.isdir(os.path.join(cwd,item)):
-                                os.makedirs(os.path.join(cwd,item))
+                            if not os.path.isdir(os.path.join(cwd, item)):
+                                os.makedirs(os.path.join(cwd, item))
                             copytree(item, cwd, True)
                         elif os.path.splitext(item)[-1].lower() not in extensions:
-                            shutil.copy(item, os.path.join(cwd,item))
+                            shutil.copy(item, os.path.join(cwd, item))
                     os.chdir(cwd)
 
                 break
@@ -392,20 +445,20 @@ class PageTemplate(BaseRenderer):
         """
         # Create a list for resolving aliases
         self.aliases = {}
-        
+
         enames = {}
         for key, value in self.engines.items():
             for i in value.ext:
-                enames[i+'s'] = key[0]
-                
+                enames[i + 's'] = key[0]
+
         singleenames = {}
         for key, value in self.engines.items():
             for i in value.ext:
                 singleenames[i] = key[0]
-                
+
         if templatedir and os.path.isdir(templatedir):
             files = os.listdir(templatedir)
-            
+
             # Compile multi-pt files first
             for f in files:
                 ext = os.path.splitext(f)[-1]
@@ -416,7 +469,7 @@ class PageTemplate(BaseRenderer):
 
                 # Multi-pt files
                 if ext.lower() in enames:
-                    self.parseTemplates(f, {'engine':enames[ext.lower()]})
+                    self.parseTemplates(f, {'engine': enames[ext.lower()]})
 
             # Now compile macros in individual files.  These have
             # a higher precedence than macros found in multi-pt files.
@@ -427,18 +480,18 @@ class PageTemplate(BaseRenderer):
                 if not os.path.isfile(f):
                     continue
 
-                options = {'name':basename}
+                options = {'name': basename}
 
                 for value in self.engines.values():
                     if ext in value.ext:
                         options['engine'] = singleenames[ext.lower()]
-                        self.parseTemplates(f, options)                
+                        self.parseTemplates(f, options)
                         del options['engine']
                         break
 
         if self.aliases:
-           log.warning('The following aliases were unresolved: %s' 
-                       % ', '.join(self.aliases.keys())) 
+            log.warning('The following aliases were unresolved: %s'
+                        % ', '.join(self.aliases.keys()))
 
     def setTemplate(self, template, options):
         """ 
@@ -482,15 +535,15 @@ class PageTemplate(BaseRenderer):
         ttype = options.get('type')
         if ttype is not None:
             ttype = ttype.lower()
-        engine = options.get('engine','zpt').lower()
+        engine = options.get('engine', 'zpt').lower()
 
-        templateeng = self.engines.get((engine, ttype), 
-                            self.engines.get((engine, None)))
-     
+        templateeng = self.engines.get((engine, ttype),
+                                       self.engines.get((engine, None)))
+
         try:
             template = templateeng.compile(template)
         except Exception, msg:
-#           print msg
+            #           print msg
             raise ValueError, 'Could not compile template "%s"' % names[0]
 
         for name in names:
@@ -528,7 +581,7 @@ class PageTemplate(BaseRenderer):
                             print 'ERROR: %s at line %s in file %s' % (msg, i, filename)
                         options = defaults.copy()
                         template = []
-    
+
                     # Done purging previous template, start a new one
                     name, value = line.split(':', 1)
                     name = name.strip()
@@ -538,7 +591,7 @@ class PageTemplate(BaseRenderer):
                         for line in f:
                             value += line.rstrip()
                             break
-    
+
                     value = re.sub(r'\s+', r' ', value.strip())
                     if name.startswith('default-'):
                         name = name.split('-')[-1]
@@ -548,15 +601,15 @@ class PageTemplate(BaseRenderer):
                     else:
                         options[name] = value
                     continue
-                
-                if template or (not(template) and line.strip()):
+
+                if template or (not (template) and line.strip()):
                     template.append(line)
-                elif not(template) and 'name' in options:
+                elif not (template) and 'name' in options:
                     template.append('')
 
         else:
             template = open(filename, 'r').readlines()
-    
+
         # Purge any awaiting templates
         if template:
             try:
@@ -564,13 +617,13 @@ class PageTemplate(BaseRenderer):
             except ValueError, msg:
                 print 'ERROR: %s in template %s in file %s' % (msg, ''.join(template), filename)
 
-        elif name and not(template):
+        elif name and not (template):
             self.setTemplate('', options)
 
     def processFileContent(self, document, s):
         # Add width, height, and depth to images
-        s = re.sub(r'&amp;(\S+)-(width|height|depth);(?:&amp;([a-z]+);)?', 
-                   self.setImageData, s) 
+        s = re.sub(r'&amp;(\S+)-(width|height|depth);(?:&amp;([a-z]+);)?',
+                   self.setImageData, s)
 
         # Convert characters >127 to entities
         if document.config['files']['escape-high-chars']:
@@ -581,7 +634,7 @@ class PageTemplate(BaseRenderer):
             s = u''.join(s)
 
         return BaseRenderer.processFileContent(self, document, s)
-             
+
     def setImageData(self, m):
         """
         Substitute in width, height, and depth parameters in image tags
@@ -603,16 +656,17 @@ class PageTemplate(BaseRenderer):
         filename, parameter, units = m.group(1), m.group(2), m.group(3)
 
         try:
-            img = self.imager.images.get(filename, self.vectorImager.images.get(filename, self.imager.staticimages.get(filename)))
+            img = self.imager.images.get(filename,
+                                         self.vectorImager.images.get(filename, self.imager.staticimages.get(filename)))
             if img is not None and getattr(img, parameter) is not None:
                 if units:
                     return getattr(getattr(img, parameter), units)
                 return str(getattr(img, parameter))
-        except KeyError: pass
+        except KeyError:
+            pass
 
         return '&%s-%s;' % (filename, parameter)
 
 
 # Set Renderer variable so that plastex will know how to load it
 Renderer = PageTemplate
-

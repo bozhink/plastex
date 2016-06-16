@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-import sys, re
-from plasTeX.Logging import getLogger
+import re
+import sys
+
 
 class DOMString(unicode):
     """
@@ -10,6 +11,7 @@ class DOMString(unicode):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-C74D1578
     """
 
+
 class DOMTimeStamp(long):
     """
     DOM Time Stamp
@@ -17,12 +19,14 @@ class DOMTimeStamp(long):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#Core-DOMTimeStamp
     """
 
+
 class DOMUserData(dict):
     """
     DOM User Data
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#Core-DOMUserData
     """
+
     def setPath(self, path, value):
         """ 
         Traverse the nested dictionary `d` and set the value 
@@ -67,6 +71,7 @@ class DOMUserData(dict):
             self = self[key]
         return self.get(keys[-1], default)
 
+
 class DOMObject(object):
     """
     DOM Object
@@ -74,23 +79,25 @@ class DOMObject(object):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#Core-DOMObject
     """
 
+
 # Exception Code
-INDEX_SIZE_ERR                 = 1
-DOMSTRING_SIZE_ERR             = 2
-HIERARCHY_REQUEST_ERR          = 3
-WRONG_DOCUMENT_ERR             = 4
-INVALID_CHARACTER_ERR          = 5
-NO_DATA_ALLOWED_ERR            = 6
-NO_MODIFICATION_ALLOWED_ERR    = 7
-NOT_FOUND_ERR                  = 8
-NOT_SUPPORTED_ERR              = 9
-INUSE_ATTRIBUTE_ERR            = 10
-INVALID_STATE_ERR              = 11
-SYNTAX_ERR                     = 12
-INVALID_MODIFICATION_ERR       = 13
-NAMESPACE_ERR                  = 14
-INVALID_ACCESS_ERR             = 15
-VALIDATION_ERR                 = 16
+INDEX_SIZE_ERR = 1
+DOMSTRING_SIZE_ERR = 2
+HIERARCHY_REQUEST_ERR = 3
+WRONG_DOCUMENT_ERR = 4
+INVALID_CHARACTER_ERR = 5
+NO_DATA_ALLOWED_ERR = 6
+NO_MODIFICATION_ALLOWED_ERR = 7
+NOT_FOUND_ERR = 8
+NOT_SUPPORTED_ERR = 9
+INUSE_ATTRIBUTE_ERR = 10
+INVALID_STATE_ERR = 11
+SYNTAX_ERR = 12
+INVALID_MODIFICATION_ERR = 13
+NAMESPACE_ERR = 14
+INVALID_ACCESS_ERR = 15
+VALIDATION_ERR = 16
+
 
 class DOMException(Exception):
     """ 
@@ -98,6 +105,7 @@ class DOMException(Exception):
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-17189187
     """
+
     def __init__(self, *args, **kw):
         if self.__class__ is DOMException:
             raise RuntimeError(
@@ -107,50 +115,66 @@ class DOMException(Exception):
     def _get_code(self):
         return self.code
 
+
 class IndexSizeErr(DOMException):
     code = INDEX_SIZE_ERR
+
 
 class DomstringSizeErr(DOMException):
     code = DOMSTRING_SIZE_ERR
 
+
 class HierarchyRequestErr(DOMException):
     code = HIERARCHY_REQUEST_ERR
+
 
 class WrongDocumentErr(DOMException):
     code = WRONG_DOCUMENT_ERR
 
+
 class InvalidCharacterErr(DOMException):
     code = INVALID_CHARACTER_ERR
+
 
 class NoDataAllowedErr(DOMException):
     code = NO_DATA_ALLOWED_ERR
 
+
 class NoModificationAllowedErr(DOMException):
     code = NO_MODIFICATION_ALLOWED_ERR
+
 
 class NotFoundErr(DOMException):
     code = NOT_FOUND_ERR
 
+
 class NotSupportedErr(DOMException):
     code = NOT_SUPPORTED_ERR
+
 
 class InuseAttributeErr(DOMException):
     code = INUSE_ATTRIBUTE_ERR
 
+
 class InvalidStateErr(DOMException):
     code = INVALID_STATE_ERR
+
 
 class SyntaxErr(DOMException):
     code = SYNTAX_ERR
 
+
 class InvalidModificationErr(DOMException):
     code = INVALID_MODIFICATION_ERR
+
 
 class NamespaceErr(DOMException):
     code = NAMESPACE_ERR
 
+
 class InvalidAccessErr(DOMException):
     code = INVALID_ACCESS_ERR
+
 
 class ValidationErr(DOMException):
     code = VALIDATION_ERR
@@ -161,12 +185,16 @@ class _DOMList(list):
 
     def length():
         def fget(self): return len(self)
+
         return locals()
+
     length = property(**length())
 
     def item(self, i):
-        try: return self[i]
-        except IndexError: return None
+        try:
+            return self[i]
+        except IndexError:
+            return None
 
 
 class DOMStringList(_DOMList):
@@ -176,15 +204,19 @@ class DOMStringList(_DOMList):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#DOMStringList
     """
 
+
 class NameList(_DOMList):
     """ 
     Name List
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#NameList
     """
+
     def getName(self, i):
-        try: return self[i]
-        except IndexError: return None
+        try:
+            return self[i]
+        except IndexError:
+            return None
 
     def getNamespaceURI(self, i):
         return None
@@ -193,12 +225,14 @@ class NameList(_DOMList):
         if ns: return False
         return self.contains(name)
 
+
 class NodeList(_DOMList):
     """
     Node List
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-536297177
     """
+
 
 class DOMImplementationList(_DOMList):
     """
@@ -207,16 +241,20 @@ class DOMImplementationList(_DOMList):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#DOMImplementationList
     """
 
+
 class DOMImplementationSource(object):
     """
     DOM Implementation Source
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#DOMImplementationSource
     """
+
     def getDOMImplementation(self, features):
         raise NotImplementedError
+
     def getDOMImplementationList(self, features):
         raise NotImplementedError
+
 
 class DOMImplementation(object):
     """
@@ -224,6 +262,7 @@ class DOMImplementation(object):
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-102161490
     """
+
     def hasFeature(self, feature, version):
         raise NotSupportedErr
 
@@ -235,6 +274,7 @@ class DOMImplementation(object):
 
     def getFeature(self, feature, version):
         raise NotSupportedErr
+
 
 class NamedNodeMap(dict):
     """ 
@@ -259,14 +299,18 @@ class NamedNodeMap(dict):
         our children.
 
         """
+
         def fget(self):
             return getattr(self, '_dom_parentNode', None)
+
         def fset(self, value):
             if getattr(self, '_dom_parentNode', None) is not value:
                 self._dom_parentNode = value
                 for value in self.values():
                     self._resetPosition(value.parentNode)
+
         return locals()
+
     parentNode = property(**parentNode())
 
     @property
@@ -334,8 +378,10 @@ class NamedNodeMap(dict):
         """
         items = self.items()
         items.sort()
-        try: return items[num][1]
-        except IndexError: return None
+        try:
+            return items[num][1]
+        except IndexError:
+            return None
 
     @property
     def length(self):
@@ -408,7 +454,7 @@ class NamedNodeMap(dict):
         elif nodeType == Node.DOCUMENT_FRAGMENT_NODE:
             for item in value:
                 self._resetPosition(item, parent=value)
-     
+
         elif nodeType is not None:
             value.parentNode = parent
             value.ownerDocument = self.ownerDocument
@@ -426,7 +472,7 @@ class NamedNodeMap(dict):
                 value.parentNode = parent
             if hasattr(value, 'ownerDocument'):
                 value.ownerDocument = self.ownerDocument
-        
+
     def update(self, other):
         """
         Merge another named node map into this one
@@ -474,7 +520,7 @@ def _compareDocumentPosition(self, other):
             return Node.DOCUMENT_POSITION_CONTAINS
         sparents.append(parent)
         parent = parent.parentNode
-        
+
     oparents = []
     parent = other
     while parent is not None:
@@ -489,13 +535,13 @@ def _compareDocumentPosition(self, other):
     for i, sparent in enumerate(sparents):
         for j, oparent in enumerate(oparents):
             if sparent is oparent:
-                s = sparents[i+1]
-                o = oparents[j+1]
+                s = sparents[i + 1]
+                o = oparents[j + 1]
                 for item in sparent:
-                   if item is s:
-                       return Node.DOCUMENT_POSITION_FOLLOWING
-                   if item is o:
-                       return Node.DOCUMENT_POSITION_PRECEDING
+                    if item is s:
+                        return Node.DOCUMENT_POSITION_FOLLOWING
+                    if item is o:
+                        return Node.DOCUMENT_POSITION_PRECEDING
 
     return Node.DOCUMENT_POSITION_DISCONNECTED
 
@@ -510,7 +556,7 @@ def _previousSibling(self):
     we can't have two references to the same Text object (i.e.
     `previousSibling` and `nextSibling` can't be variables).
 
-    """ 
+    """
     if not self.parentNode:
         return None
     previous = None
@@ -531,7 +577,7 @@ def _nextSibling(self):
     we can't have two references to the same Text object (i.e.
     `previousSibling` and `nextSibling` can't be variables).
 
-    """ 
+    """
     if not self.parentNode:
         return None
     next = False
@@ -542,16 +588,18 @@ def _nextSibling(self):
             next = True
     return None
 
+
 def xmlstr(obj):
     """ Escape special characters to create a legal xml string """
     if isinstance(obj, basestring):
-        return obj.replace('&','&amp;').replace('<','&lt;').replace('>','&gt;')
+        return obj.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
     elif isinstance(obj, list):
         return unicode([xmlstr(x) for x in obj])
     elif isinstance(obj, dict):
-        return unicode(dict([(xmlstr(x),xmlstr(y)) for x,y in obj.items()]))
+        return unicode(dict([(xmlstr(x), xmlstr(y)) for x, y in obj.items()]))
     else:
         return xmlstr(unicode(obj))
+
 
 class Node(object):
     """
@@ -559,9 +607,9 @@ class Node(object):
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-1950641247
     """
-#
-# LaTeX Node extensions
-#
+    #
+    # LaTeX Node extensions
+    #
     # LaTeX document hierarchy
     DOCUMENT_LEVEL = -sys.maxint
     VOLUME_LEVEL = -2
@@ -578,14 +626,14 @@ class Node(object):
     ENVIRONMENT_LEVEL = 201
     CHARACTER_LEVEL = COMMAND_LEVEL = 1001
 
-    level = CHARACTER_LEVEL    # Document hierarchy level of the node
-    blockType = False     # Indicates that this node is a block-level element
-                          # (i.e. should not be in a paragraph)
-    contextDepth = 1000   # TeX context level of this node (used during digest)
+    level = CHARACTER_LEVEL  # Document hierarchy level of the node
+    blockType = False  # Indicates that this node is a block-level element
+    # (i.e. should not be in a paragraph)
+    contextDepth = 1000  # TeX context level of this node (used during digest)
 
-#
-# End LaTeX Node extensions
-#
+    #
+    # End LaTeX Node extensions
+    #
 
     ELEMENT_NODE = 1
     ATTRIBUTE_NODE = 2
@@ -607,10 +655,10 @@ class Node(object):
     DOCUMENT_POSITION_CONTAINED_BY = 0x10
     DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC = 0x20
 
-    NODE_SLOTS = ['parentNode','contextDepth','ownerDocument',
-                  '_dom_childNodes','_dom_userdata']
-    ELEMENT_SLOTS = NODE_SLOTS + ['_dom_attributes','nodeName']
-    TEXT_SLOTS = ['parentNode','contextDepth','ownerDocument','isMarkup']
+    NODE_SLOTS = ['parentNode', 'contextDepth', 'ownerDocument',
+                  '_dom_childNodes', '_dom_userdata']
+    ELEMENT_SLOTS = NODE_SLOTS + ['_dom_attributes', 'nodeName']
+    TEXT_SLOTS = ['parentNode', 'contextDepth', 'ownerDocument', 'isMarkup']
 
     __slots__ = []
 
@@ -620,7 +668,7 @@ class Node(object):
     prefix = None
     localName = None
     baseURI = None
-  
+
     nodeName = None
     nodeValue = None
     nodeType = None
@@ -655,8 +703,8 @@ class Node(object):
 
         # Remap name into valid XML tag name
         name = self.nodeName
-        name = name.replace('@','-')
-        name = name.replace('#','dom-')
+        name = name.replace('@', '-')
+        name = name.replace('#', 'dom-')
         if name.startswith('-'):
             name = 'x%s' % name
 
@@ -674,7 +722,7 @@ class Node(object):
             name = 'unknown'
 
         source = ''
-        #source = ' source="%s"' % xmlstr(self.source)
+        # source = ' source="%s"' % xmlstr(self.source)
 
         style = ''
         if hasattr(self, 'style') and self.style:
@@ -684,7 +732,8 @@ class Node(object):
         try:
             if self.ref is not None:
                 ref = ' ref="%s"' % self.ref.toXML()
-        except AttributeError: pass
+        except AttributeError:
+            pass
 
         label = ''
         try:
@@ -692,15 +741,16 @@ class Node(object):
                 lid = xmlstr(self.id).strip()
                 if lid:
                     label = ' id="%s"' % lid
-        except AttributeError: pass
+        except AttributeError:
+            pass
 
         extra = ''
         if debug:
             extra = ' parentNode="%s" ownerDocument="%s"' % \
                     (id(self.parentNode), id(self.ownerDocument))
-            
+
         if not self.parentNode:
-            extra += ' xmlns:plastex="http://plastex.sf.net/"' 
+            extra += ' xmlns:plastex="http://plastex.sf.net/"'
 
         beginning = False
         if getattr(self, 'macroMode', -2) == getattr(self, 'MODE_BEGIN', -1):
@@ -711,16 +761,16 @@ class Node(object):
             ending = '/'
 
         # Bail out early if the element is empty
-        if not(self.attributes) and not(self.hasChildNodes()):
+        if not (self.attributes) and not (self.hasChildNodes()):
             if ending:
                 return '</%s%s>' % (name, modifier)
             if beginning:
                 return '<%s%s%s%s%s%s%s>' % (name, modifier, style, source, ref, label, extra)
-                
+
             return '<%s%s%s%s%s%s%s/>' % (name, modifier, style, source, ref, label, extra)
 
         s = ['<%s%s%s%s%s%s%s%s>\n' % (ending, name, modifier, style, source, ref, label, extra)]
-            
+
         # Render attributes
         if self.attributes:
             for key, value in self.attributes.items():
@@ -743,11 +793,11 @@ class Node(object):
 
         # Render content
         if self.hasChildNodes():
-            if not(self.attributes and self.attributes.has_key('self')):
+            if not (self.attributes and self.attributes.has_key('self')):
                 for value in self.childNodes:
                     if hasattr(value, 'toXML'):
                         value = value.toXML()
-                    else: 
+                    else:
                         value = xmlstr(value)
                     s.append(value)
 
@@ -808,8 +858,10 @@ class Node(object):
         `newChild`
 
         """
-        try: self.removeChild(newChild)
-        except NotFoundErr: pass
+        try:
+            self.removeChild(newChild)
+        except NotFoundErr:
+            pass
 
         # Insert the new item
         for i, item in enumerate(self):
@@ -831,13 +883,15 @@ class Node(object):
         `newChild`
 
         """
-        try: self.removeChild(newChild)
-        except NotFoundErr: pass
+        try:
+            self.removeChild(newChild)
+        except NotFoundErr:
+            pass
 
         # Insert the new item
         for i, item in enumerate(self):
             if item is refChild:
-                self.insert(i+1, newChild)
+                self.insert(i + 1, newChild)
                 return newChild
 
         raise NotFoundErr
@@ -854,8 +908,10 @@ class Node(object):
         `oldChild`
 
         """
-        try: self.removeChild(newChild)
-        except NotFoundErr: pass
+        try:
+            self.removeChild(newChild)
+        except NotFoundErr:
+            pass
 
         # Do the replacement
         for i, item in enumerate(self):
@@ -895,8 +951,10 @@ class Node(object):
         the item removed from the list
 
         """
-        try: return self.childNodes.pop(index)
-        except: raise IndexError, 'object has no childNodes'
+        try:
+            return self.childNodes.pop(index)
+        except:
+            raise IndexError, 'object has no childNodes'
 
     def append(self, newChild, setParent=True):
         """ 
@@ -915,7 +973,7 @@ class Node(object):
             for item in newChild:
                 self.append(item, setParent=setParent)
         else:
-            self.childNodes.append(newChild) 
+            self.childNodes.append(newChild)
         if setParent:
             if self.nodeType == self.DOCUMENT_FRAGMENT_NODE:
                 newChild.parentNode = self.parentNode
@@ -968,15 +1026,15 @@ class Node(object):
         # If a DocumentFragment is being inserted, but it isn't replacing
         # a slice, we need to put each child in manually.
         if node.nodeType == Node.DOCUMENT_FRAGMENT_NODE \
-           and not(isinstance(i, slice)):
+                and not (isinstance(i, slice)):
             for item in node:
                 self.insert(i, item)
                 i += 1
             self.pop(i)
-            
+
         else:
             self.insert(i, node)
-            self.pop(i+1)
+            self.pop(i + 1)
 
     def extend(self, other, setParent=True):
         """ self += other """
@@ -1004,7 +1062,7 @@ class Node(object):
         """ other + self """
         obj = type(self)()
         obj.ownerDocument = self.ownerDocument
-        obj.parentNode = None 
+        obj.parentNode = None
         for item in other:
             obj.append(item)
         for item in self:
@@ -1015,7 +1073,7 @@ class Node(object):
         """ self + other """
         obj = type(self)()
         obj.ownerDocument = self.ownerDocument
-        obj.parentNode = None 
+        obj.parentNode = None
         for item in self:
             obj.append(item)
         for item in other:
@@ -1034,10 +1092,12 @@ class Node(object):
 
         """
         node = type(self)()
-        try: node.nodeName = self.nodeName
-        except: pass
-#       node.nodeValue = self.nodeValue
-#       node.nodeType = self.nodeType
+        try:
+            node.nodeName = self.nodeName
+        except:
+            pass
+        # node.nodeValue = self.nodeValue
+        #       node.nodeType = self.nodeType
         node.parentNode = self.parentNode
         node.ownerDocument = self.ownerDocument
         if deep:
@@ -1052,7 +1112,7 @@ class Node(object):
             if self.hasChildNodes():
                 for x in self.childNodes:
                     node.append(x)
-        return node 
+        return node
 
     def normalize(self, charsubs=[]):
         """ 
@@ -1092,7 +1152,7 @@ class Node(object):
 
     def hasAttributes(self):
         """ Are there any attributes set? """
-        return not(not(self.attributes))
+        return not (not (self.attributes))
 
     @property
     def textContent(self):
@@ -1112,7 +1172,7 @@ class Node(object):
             return self.ownerDocument.createTextNode(u''.join(output))
         else:
             return Text(u''.join(output))
- 
+
     def isSameNode(self, other):
         """ Is this the same node as `other`? """
         return other is self
@@ -1155,9 +1215,9 @@ class Node(object):
     def __cmp__(self, other):
         try:
             res = cmp(self.nodeName, other.nodeName)
-            if res: return res 
+            if res: return res
             res = cmp(self.attributes, other.attributes)
-            if res: return res 
+            if res: return res
             if self.hasChildNodes() and other.hasChildNodes():
                 return cmp(self.childNodes, other.childNodes)
         except AttributeError:
@@ -1193,8 +1253,10 @@ class Node(object):
         the stored value, or None if it wasn't set
 
         """
-        try: return self.userdata[key]
-        except (AttributeError, KeyError): pass
+        try:
+            return self.userdata[key]
+        except (AttributeError, KeyError):
+            pass
         return None
 
     @property
@@ -1221,7 +1283,7 @@ class Node(object):
         if self.hasChildNodes():
             return self.childNodes[i]
         raise IndexError, 'object has no childNodes'
-        
+
     @property
     def allChildNodes(self):
         """ Return a list containing all of the child nodes in the branch """
@@ -1232,6 +1294,7 @@ class Node(object):
             nodes.append(child)
             nodes.extend(child.allChildNodes)
         return nodes
+
 
 def _getElementsByTagName(self, tagname):
     """ 
@@ -1247,26 +1310,26 @@ def _getElementsByTagName(self, tagname):
     output = NodeList()
 
     # Allow a list of names
-    if not isinstance(tagname, (tuple,list)):
+    if not isinstance(tagname, (tuple, list)):
         tagname = [tagname]
 
     # Look in attributes dictionary for document fragments as well
     if self.attributes:
         for item in self.attributes.values():
             if getattr(item, 'tagName', None) in tagname:
-                 output.append(item)
+                output.append(item)
             if hasattr(item, 'getElementsByTagName'):
                 output += item.getElementsByTagName(tagname)
             elif isinstance(item, list):
                 for e in item:
                     if getattr(e, 'tagName', None) in tagname:
-                        output.append(e) 
+                        output.append(e)
                     if hasattr(item, 'getElementsByTagName'):
                         output += item.getElementsByTagName(tagname)
             elif isinstance(item, dict):
                 for e in item.values():
                     if getattr(e, 'tagName', None) in tagname:
-                        output.append(e) 
+                        output.append(e)
                     if hasattr(item, 'getElementsByTagName'):
                         output += item.getElementsByTagName(tagname)
 
@@ -1275,7 +1338,7 @@ def _getElementsByTagName(self, tagname):
         if getattr(item, 'tagName', None) in tagname:
             output.append(item)
         if hasattr(item, 'getElementsByTagName'):
-            output += item.getElementsByTagName(tagname) 
+            output += item.getElementsByTagName(tagname)
 
     return output
 
@@ -1295,7 +1358,7 @@ def _getElementById(self, elementId):
     if hasattr(self, 'attributes'):
         for item in self.attributes.values():
             if id(item) == elementId:
-                 return item
+                return item
             if hasattr(item, 'getElementById'):
                 e = item.getElementsById(elementId)
                 if e is not None:
@@ -1322,11 +1385,12 @@ def _getElementById(self, elementId):
         if id(item) == elementId:
             return item
         if hasattr(item, 'getElementById'):
-            e = item.getElementById(elementId) 
+            e = item.getElementById(elementId)
             if e is not None:
                 return e
 
     return None
+
 
 class DocumentFragment(Node):
     """
@@ -1356,6 +1420,7 @@ class DocumentFragment(Node):
 
     getElementsByTagName = _getElementsByTagName
 
+
 class Attr(Node):
     """
     Attr
@@ -1363,7 +1428,7 @@ class Attr(Node):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-637646024
     """
     nodeType = Node.ATTRIBUTE_NODE
-#   __slots__ = Node.NODE_SLOTS + ['name']
+    #   __slots__ = Node.NODE_SLOTS + ['name']
 
     name = None
     specified = None
@@ -1377,14 +1442,20 @@ class Attr(Node):
 
     def nodeName():
         def fget(self): return self.name
+
         def fset(self, value): self.name = value
+
         return locals()
+
     nodeName = property(**nodeName())
 
     def nodeValue():
         def fget(self): return self.value
+
         def fset(self, value): self.value = value
+
         return locals()
+
     nodeValue = property(**nodeValue())
 
 
@@ -1395,7 +1466,8 @@ class Element(Node):
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ID-745549614
     """
     nodeType = Node.ELEMENT_NODE
-#   __slots__ = Node.ELEMENT_SLOTS
+
+    #   __slots__ = Node.ELEMENT_SLOTS
 
     def __repr__(self):
         return '<%s element at 0x%s>' % (self.nodeName, id(self))
@@ -1413,10 +1485,13 @@ class Element(Node):
 
     def tagName():
         def fget(self): return self.nodeName
+
         def fset(self, value): self.nodeName = value
+
         return locals()
+
     tagName = property(**tagName())
-        
+
     def getAttribute(self, name):
         """
         Get attribute with name `name`
@@ -1449,8 +1524,10 @@ class Element(Node):
         name -- name of attribute to remove
 
         """
-        try: del self.attributes[name]
-        except KeyError: pass
+        try:
+            del self.attributes[name]
+        except KeyError:
+            pass
 
     getAttributeNode = getAttribute
 
@@ -1528,7 +1605,7 @@ class Element(Node):
         return self.getAttributeNode(localName)
 
     setAttributeNodeNS = setAttributeNode
-  
+
     def getElementsByTagNameNS(self, namespaceURI, localName):
         """ 
         Get elements with tag name in given namespace
@@ -1582,8 +1659,10 @@ class Element(Node):
             ID attribute or not
 
         """
-        try: self.attributes[name].isId = isId
-        except KeyError: raise NotFoundErr
+        try:
+            self.attributes[name].isId = isId
+        except KeyError:
+            raise NotFoundErr
 
     def setIdAttributeNS(self, namespaceURI, localName, isId=True):
         """
@@ -1667,7 +1746,7 @@ class CharacterData(unicode, Node):
 
     def _notImplemented(self, *args, **kwargs):
         raise NotImplementedError
-    
+
     substringData = _notImplemented
     appendData = _notImplemented
     insertData = _notImplemented
@@ -1710,6 +1789,7 @@ class CharacterData(unicode, Node):
     def __unicode__(self):
         return self
 
+
 class Text(CharacterData):
     """
     Text
@@ -1725,7 +1805,7 @@ class Text(CharacterData):
 
     @property
     def isElementContentWhitespace(self):
-        return not(self.strip())
+        return not (self.strip())
 
     @property
     def wholeText(self):
@@ -1808,6 +1888,7 @@ class DOMErrorHandler(object):
 
     http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407/core.html#ERROR-Interfaces-DOMErrorHandler
     """
+
     def handleError(self, error):
         raise NotImplementedError
 
@@ -1883,8 +1964,10 @@ class DOMConfiguration(dict):
         value of parameter `name`
 
         """
-        try: return self[name]
-        except KeyError: raise NotFoundErr
+        try:
+            return self[name]
+        except KeyError:
+            raise NotFoundErr
 
     def canSetParameter(self, name, value):
         """
@@ -1920,7 +2003,7 @@ class DocumentType(Node):
     """
     nodeType = Node.DOCUMENT_TYPE_NODE
     __slots__ = Node.NODE_SLOTS
-    
+
     name = None
     entities = None
     notations = None
@@ -1930,8 +2013,11 @@ class DocumentType(Node):
 
     def nodeName():
         def fget(self): return self.name
+
         def fset(self, value): self.name = value
+
         return locals()
+
     nodeName = property(**nodeName())
 
 
@@ -1989,14 +2075,20 @@ class ProcessingInstruction(Node):
 
     def nodeName():
         def fget(self): return self.target
+
         def fset(self, value): self.target = value
+
         return locals()
+
     nodeName = property(**nodeName())
 
     def nodeValue():
         def fget(self): return self.data
+
         def fset(self, value): self.data = value
+
         return locals()
+
     nodeValue = property(**nodeValue())
 
 
@@ -2063,7 +2155,7 @@ class Document(Node):
         o.ownerDocument = self
         o.parentNode = None
         return o
-         
+
     def createTextNode(self, data):
         """ 
         Instantiate a new text node 
@@ -2111,7 +2203,7 @@ class Document(Node):
         o.ownerDocument = self
         o.parentNode = None
         return o
-                         
+
     def createProcessingInstruction(self, target, data):
         """ 
         Instantiate a new processing instruction node 
@@ -2145,7 +2237,7 @@ class Document(Node):
         o.ownerDocument = self
         o.parentNode = None
         return o
-                   
+
     def createEntityReference(self, name):
         """ 
         Instantiate a new entity reference 
@@ -2183,7 +2275,7 @@ class Document(Node):
         node.parentNode = self
         node.ownerDocument = self
         return node
-  
+
     def createElementNS(self, namespaceURI, qualifiedName):
         """
         Create an element in the given namespace

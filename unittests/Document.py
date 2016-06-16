@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 
-import unittest, re
+import unittest
 from unittest import TestCase
-from plasTeX.TeX import TeX
+
 from plasTeX import Command, Environment
+from plasTeX.TeX import TeX
+
 
 class Document(TestCase):
-
     def testParentage(self):
         class myenv(Environment):
             pass
+
         class foo(Command):
             args = 'self'
+
         s = TeX()
         s.ownerDocument.context.importMacros(locals())
         s.input(r'\begin{myenv}\foo{TEST}\end{myenv}')
@@ -42,4 +45,3 @@ class Document(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

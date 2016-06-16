@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-import os, re
-from plasTeX import Command
+import os
+import re
 
 from graphics import DeclareGraphicsExtensions, graphicspath
+from plasTeX import Command
+
 
 class includegraphics(Command):
     args = '* [ options:dict ] file:str'
@@ -15,16 +17,16 @@ class includegraphics(Command):
 
         f = self.attributes['file']
         ext = self.ownerDocument.userdata.getPath(
-                      'packages/%s/extensions' % self.packageName, 
-                      ['.png','.jpg','.jpeg','.gif','.pdf','.ps','.eps'])
+            'packages/%s/extensions' % self.packageName,
+            ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.ps', '.eps'])
         paths = self.ownerDocument.userdata.getPath(
-                        'packages/%s/paths' % self.packageName, ['.'])
+            'packages/%s/paths' % self.packageName, ['.'])
         img = None
 
         # Check for file using graphicspath
         for p in paths:
-            for e in ['']+ext:
-                fname = os.path.join(p,f+e)
+            for e in [''] + ext:
+                fname = os.path.join(p, f + e)
                 if os.path.isfile(fname):
                     img = os.path.abspath(fname)
                     break
@@ -33,17 +35,17 @@ class includegraphics(Command):
 
         # Check for file using kpsewhich
         if img is None:
-            for e in ['']+ext:
-                try: 
-                    img = os.path.abspath(tex.kpsewhich(f+e))
+            for e in [''] + ext:
+                try:
+                    img = os.path.abspath(tex.kpsewhich(f + e))
                     break
-                except (OSError, IOError): 
-                    pass 
+                except (OSError, IOError):
+                    pass
 
         options = self.attributes['options']
 
         if options is not None:
-            
+
             scale = options.get('scale')
             if scale is not None:
                 scale = float(scale)
@@ -51,7 +53,7 @@ class includegraphics(Command):
                 w, h = Image.open(img).size
                 self.style['width'] = '%spx' % (w * scale)
                 self.style['height'] = '%spx' % (h * scale)
-                
+
             height = options.get('height')
             if height is not None:
                 self.style['height'] = height
@@ -59,7 +61,7 @@ class includegraphics(Command):
             width = options.get('width')
             if width is not None:
                 self.style['width'] = width
-                
+
             def getdimension(s):
                 m = re.match(r'^([\d\.]+)\s*([a-z]*)$', s)
                 if m and '.' in m.group(1):
@@ -69,21 +71,21 @@ class includegraphics(Command):
 
             keepaspectratio = options.get('keepaspectratio')
             if img is not None and keepaspectratio == 'true' and \
-               height is not None and width is not None:
+                            height is not None and width is not None:
                 from PIL import Image
                 w, h = Image.open(img).size
-                
+
                 height, hunit = getdimension(height)
                 width, wunit = getdimension(width)
-                
+
                 scalex = float(width) / w
                 scaley = float(height) / h
-                
+
                 if scaley > scalex:
                     height = h * scalex
                 else:
                     width = w * scaley
-                    
+
                 self.style['width'] = '%s%s' % (width, wunit)
                 self.style['height'] = '%s%s' % (height, hunit)
 
@@ -91,8 +93,10 @@ class includegraphics(Command):
 
         return res
 
+
 class DeclareGraphicsExtensions(DeclareGraphicsExtensions):
     packageName = 'graphicx'
+
 
 class graphicspath(graphicspath):
     packageName = 'graphicx'

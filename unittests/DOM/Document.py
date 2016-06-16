@@ -2,10 +2,11 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.DOM import *
 
-class DocumentTest(TestCase):
 
+class DocumentTest(TestCase):
     def testCreateElement(self):
         doc = Document()
         node = doc.createAttribute('node')
@@ -23,7 +24,7 @@ class DocumentTest(TestCase):
         node = doc.createTextNode('foo')
         assert isinstance(node, Text)
         assert node == 'foo'
-    
+
     def testCreateComment(self):
         doc = Document()
         node = doc.createComment('foo')
@@ -38,7 +39,7 @@ class DocumentTest(TestCase):
 
     def testCreateProcessingInstruction(self):
         pass
-    
+
     def testAttribute(self):
         doc = Document()
         node = doc.createAttribute('foo')
@@ -47,7 +48,7 @@ class DocumentTest(TestCase):
 
     def testEntityReference(self):
         pass
-    
+
     def testGetElementsByTagName(self):
         doc = Document()
         one = doc.createElement('one')
@@ -107,6 +108,6 @@ class DocumentTest(TestCase):
         assert len(elems) == 1, '%s != %s' % (len(elems), 1)
         assert elems.textContent == 'text2text3'
 
+
 if __name__ == '__main__':
     unittest.main()
-

@@ -1,30 +1,35 @@
 #!/usr/bin/env python
 
-import os, sys, codecs, string, glob
+import codecs
+import glob
+import os
+import string
+import sys
+
 import plasTeX
-from plasTeX.TeX import TeX
 from plasTeX.Config import config
-from plasTeX.ConfigManager import *
 from plasTeX.Logging import getLogger
+from plasTeX.TeX import TeX
 
 log = getLogger()
 
 __version__ = '1.0'
 
+
 def main(argv):
     """ Main program routine """
-    print >>sys.stderr, 'plasTeX version %s' % __version__
+    print >> sys.stderr, 'plasTeX version %s' % __version__
 
     # Parse the command line options
     try:
         opts, args = config.getopt(argv[1:])
     except Exception, msg:
         log.error(msg)
-        print >>sys.stderr, config.usage()
+        print >> sys.stderr, config.usage()
         sys.exit(1)
 
     if not args:
-        print >>sys.stderr, config.usage()
+        print >> sys.stderr, config.usage()
         sys.exit(1)
 
     file = args.pop(0)
@@ -59,12 +64,12 @@ def main(argv):
 
     # Set up TEXINPUTS to include the current directory for the renderer
     os.environ['TEXINPUTS'] = '%s%s%s%s' % (os.getcwd(), os.pathsep,
-                                         os.environ.get('TEXINPUTS',''), os.pathsep)
+                                            os.environ.get('TEXINPUTS', ''), os.pathsep)
 
     # Change to specified directory to output to
     outdir = config['files']['directory']
     if outdir:
-        outdir = string.Template(outdir).substitute({'jobname':jobname})
+        outdir = string.Template(outdir).substitute({'jobname': jobname})
         if not os.path.isdir(outdir):
             os.makedirs(outdir)
         log.info('Directing output files to directory: %s.' % outdir)
@@ -72,43 +77,46 @@ def main(argv):
 
     # Load renderer
     try:
-        exec('from plasTeX.Renderers.%s import Renderer' % rname)
+        exec ('from plasTeX.Renderers.%s import Renderer' % rname)
     except ImportError, msg:
-        log.error('Could not import renderer "%s".  Make sure that it is installed correctly, and can be imported by Python.' % rname)
+        log.error(
+            'Could not import renderer "%s".  Make sure that it is installed correctly, and can be imported by Python.' % rname)
         sys.exit(1)
 
     # Write expanded source file
-    #sourcefile = '%s.source' % jobname
-    #open(sourcefile,'w').write(document.source.encode('utf-8'))
+    # sourcefile = '%s.source' % jobname
+    # open(sourcefile,'w').write(document.source.encode('utf-8'))
 
     # Write XML dump
     if config['general']['xml']:
         outfile = '%s.xml' % jobname
-        codecs.open(outfile,'w',encoding='utf-8').write(document.toXML())
+        codecs.open(outfile, 'w', encoding='utf-8').write(document.toXML())
 
     # Apply renderer
     Renderer().render(document)
 
     print
 
+
 def info(type, value, tb):
-   if hasattr(sys, 'ps1') or not sys.stderr.isatty():
-      # we are in interactive mode or we don't have a tty-like
-      # device, so we call the default hook
-      sys.__excepthook__(type, value, tb)
-   else:
-      import traceback, pdb
-      # we are NOT in interactive mode, print the exception...
-      traceback.print_exception(type, value, tb)
-      print
-      # ...then start the debugger in post-mortem mode.
-      pdb.pm()
+    if hasattr(sys, 'ps1') or not sys.stderr.isatty():
+        # we are in interactive mode or we don't have a tty-like
+        # device, so we call the default hook
+        sys.__excepthook__(type, value, tb)
+    else:
+        import traceback, pdb
+        # we are NOT in interactive mode, print the exception...
+        traceback.print_exception(type, value, tb)
+        print
+        # ...then start the debugger in post-mortem mode.
+        pdb.pm()
 
-#sys.excepthook = info
 
-#sys.setrecursionlimit(10000)
+# sys.excepthook = info
 
-#main(sys.argv)
+# sys.setrecursionlimit(10000)
+
+# main(sys.argv)
 try:
     main(sys.argv)
 except KeyboardInterrupt:

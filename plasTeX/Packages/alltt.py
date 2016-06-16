@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
+from plasTeX import Environment
 from plasTeX.Tokenizer import Token
-from plasTeX import Command, Environment
 
 
 class alltt(Environment):
-
     def invoke(self, tex):
         self.ownerDocument.context.push(self)
         esc = self.ownerDocument.context.categories[Token.CC_ESCAPE]
@@ -20,4 +19,3 @@ class alltt(Environment):
             self.ownerDocument.context.catcode(i, Token.CC_EGROUP)
         Environment.invoke(self, tex)
         self.ownerDocument.context.pop(self)
-

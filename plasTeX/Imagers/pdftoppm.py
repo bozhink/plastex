@@ -6,6 +6,7 @@ import subprocess
 
 import plasTeX.Imagers
 
+
 class pdftoppm(plasTeX.Imagers.Imager):
     """ Imager that uses libpoppler's pdftoppm to convert pdf to png """
     command = 'pdftoppm -png -r 150'
@@ -21,8 +22,8 @@ class pdftoppm(plasTeX.Imagers.Imager):
 
         """
         cmd = self.command.split()[0]
-        proc = subprocess.Popen('%s --help' % cmd, 
-                                shell=True, 
+        proc = subprocess.Popen('%s --help' % cmd,
+                                shell=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT)
         return 'pdftoppm' in str(proc.communicate())
@@ -44,5 +45,6 @@ class pdftoppm(plasTeX.Imagers.Imager):
                 options += '%s %s ' % (opt, value)
         rc = os.system('%s %s%s img' % (self.command, options, 'images.out'))
         return rc, [f for f in os.listdir('.') if re.match(r'^img-\d+\.\w+$', f)]
-    
+
+
 Imager = pdftoppm

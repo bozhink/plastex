@@ -16,12 +16,18 @@ Example:
 
 """
 
-import string, os, traceback, sys, plasTeX, codecs, subprocess, types
+import codecs
+import os
+import string
+import subprocess
+import sys
+
+import plasTeX
 from Tokenizer import Tokenizer, Token, EscapeSequence, Other
-from plasTeX import TeXDocument
-from plasTeX.Base.TeX.Primitives import MathShift
 from plasTeX import ParameterCommand, Macro
+from plasTeX import TeXDocument
 from plasTeX import glue, muglue, mudimen, dimen, number
+from plasTeX.Base.TeX.Primitives import MathShift
 from plasTeX.Logging import getLogger, disableLogging, fileLogging
 
 # Only export the TeX class
@@ -33,22 +39,29 @@ tokenlog = getLogger('parse.tokens')
 digestlog = getLogger('parse.digest')
 _type = type
 
+
 class bufferediter(object):
     """ Buffered iterator """
+
     def __init__(self, obj):
         self._next = iter(obj).next
         self._buffer = []
+
     def __iter__(self):
         return self
+
     def next(self):
         if self._buffer:
             return self._buffer.pop()
         return self._next()
+
     def push(self, value):
         self._buffer.append(value)
 
+
 class ArgumentContext(plasTeX.Macro):
     pass
+
 
 class TeX(object):
     """
@@ -73,7 +86,7 @@ class TeX(object):
 
         # TeX arguments types and their casting functions
         self.argtypes = {
-            'url': (self.castNone, {'#':12,'~':12,'%':12,'&':12}),
+            'url': (self.castNone, {'#': 12, '~': 12, '%': 12, '&': 12}),
             'str': self.castString,
             str: self.castString,
             'chr': self.castString,
@@ -84,7 +97,7 @@ class TeX(object):
             'id': self.castLabel,
             'idref': self.castRef,
             'ref': self.castRef,
-            'nox': lambda x,**y: x,
+            'nox': lambda x, **y: x,
             'list': self.castList,
             list: self.castList,
             'dict': self.castDictionary,
@@ -94,9 +107,9 @@ class TeX(object):
             'dimen': self.castDimen,
             'dimension': self.castDimen,
             'length': self.castDimen,
-#           'mudimen': self.castMuDimen,
-#           'glue':  self.castGlue,
-#           'muglue': self.castMuGlue,
+            #           'mudimen': self.castMuDimen,
+            #           'glue':  self.castGlue,
+            #           'muglue': self.castMuGlue,
             'number': self.castNumber,
             'count': self.castNumber,
             'int': self.castNumber,
@@ -107,7 +120,7 @@ class TeX(object):
         }
 
         # Starting parsing if a source was given
-        self.currentInput = (0,0)
+        self.currentInput = (0, 0)
 
         self.jobname = None
         if file is not None:
@@ -334,10 +347,10 @@ class TeX(object):
                     obj.parentNode = token.parentNode
                     tokens = obj.invoke(self)
                     if tokens is None:
-#                       log.info('expanding %s %s', token.macroName, obj)
+                        #                       log.info('expanding %s %s', token.macroName, obj)
                         pushToken(obj)
                     elif tokens:
-#                       log.info('expanding %s %s', token.macroName, ''.join([x.source for x in tokens]))
+                        #                       log.info('expanding %s %s', token.macroName, ''.join([x.source for x in tokens]))
                         pushTokens(tokens)
                     continue
                 except Exception, msg:
@@ -347,7 +360,7 @@ class TeX(object):
                               token.macroName, self.lineInfo, msg)
                     raise
 
-#           tokenlog.debug('%s: %s', type(token), token.ownerDocument)
+                    #           tokenlog.debug('%s: %s', type(token), token.ownerDocument)
 
             yield token
 
@@ -404,7 +417,6 @@ class TeX(object):
 
         return out
 
-
     def parse(self, output=None):
         """
         Parse stream content until it is empty
@@ -430,7 +442,7 @@ class TeX(object):
                 output.append(item)
         except Exception, msg:
             if str(msg).strip():
-               msg = ' (%s)' % str(msg).strip()
+                msg = ' (%s)' % str(msg).strip()
             log.error('An error occurred while building the document object%s%s', self.lineInfo, msg)
             raise
 
@@ -510,8 +522,10 @@ class TeX(object):
                       Token.CC_EGROUP, Token.CC_BGROUP,
                       Token.CC_SPACE]
 
-        try: iter(tokens)
-        except TypeError: return tokens
+        try:
+            iter(tokens)
+        except TypeError:
+            return tokens
 
         for t in tokens:
             if isinstance(t, basestring):
@@ -536,7 +550,7 @@ class TeX(object):
 
         return (u''.join([x for x in tokens
                           if getattr(x, 'catcode', Token.CC_OTHER)
-                             not in grouptokens])).strip()
+                          not in grouptokens])).strip()
 
     def processIfContent(self, which, debug=False):
         """
@@ -553,8 +567,10 @@ class TeX(object):
         # True to case 0 and False to case 1.
         elsefound = False
         if isinstance(which, bool):
-            if which: which = 0
-            else: which = 1
+            if which:
+                which = 0
+            else:
+                which = 1
 
         cases = [[]]
         nesting = 0
@@ -570,10 +586,10 @@ class TeX(object):
                 elif not nesting:
                     break
                 nesting -= 1
-            elif not(nesting) and name == 'else':
+            elif not (nesting) and name == 'else':
                 cases.append([])
                 continue
-            elif not(nesting) and name == 'or':
+            elif not (nesting) and name == 'or':
                 cases.append([])
                 continue
             else:
@@ -596,8 +612,8 @@ class TeX(object):
         return self.readArgumentAndSource(*args, **kwargs)[0]
 
     def readArgumentAndSource(self, spec=None, type=None, subtype=None,
-                    delim=',', expanded=False, default=None, parentNode=None,
-                    name=None, stripLeadingWhitespace=True):
+                              delim=',', expanded=False, default=None, parentNode=None,
+                              name=None, stripLeadingWhitespace=True):
         """
         Get an argument and the TeX source that created it
 
@@ -644,37 +660,37 @@ class TeX(object):
         # Disable expansion of parameters
         ParameterCommand.disable()
 
-        if type in ['Dimen','Length','Dimension']:
+        if type in ['Dimen', 'Length', 'Dimension']:
             n = self.readDimen()
             ParameterCommand.enable()
             return n, n.source
 
-        if type in ['MuDimen','MuLength']:
+        if type in ['MuDimen', 'MuLength']:
             n = self.readMuDimen()
             ParameterCommand.enable()
             return n, n.source
 
-        if type in ['Glue','Skip']:
+        if type in ['Glue', 'Skip']:
             n = self.readGlue()
             ParameterCommand.enable()
             return n, n.source
 
-        if type in ['MuGlue','MuSkip']:
+        if type in ['MuGlue', 'MuSkip']:
             n = self.readMuGlue()
             ParameterCommand.enable()
             return n, n.source
 
-        if type in ['Number','Int','Integer']:
+        if type in ['Number', 'Int', 'Integer']:
             n = self.readNumber()
             ParameterCommand.enable()
             return n, n.source
 
-        if type in ['Token','Tok']:
+        if type in ['Token', 'Tok']:
             for tok in self.itertokens():
                 ParameterCommand.enable()
                 return tok, tok.source
 
-        if type in ['XTok','XToken']:
+        if type in ['XTok', 'XToken']:
             self.ownerDocument.context.warnOnUnrecognized = False
             for t in self.itertokens():
                 if t.catcode == Token.CC_BGROUP:
@@ -702,7 +718,8 @@ class TeX(object):
                     break
                 else:
                     args.append(t)
-            else: pass
+            else:
+                pass
             ParameterCommand.enable()
             return args, self.source(args)
 
@@ -724,7 +741,7 @@ class TeX(object):
         try:
             # Set catcodes for this argument type
             try:
-                if isinstance(self.argtypes[type], (list,tuple)):
+                if isinstance(self.argtypes[type], (list, tuple)):
                     for key, value in self.argtypes[type][1].items():
                         priorcodes[key] = self.ownerDocument.context.whichCode(key)
                         self.ownerDocument.context.catcode(key, value)
@@ -749,7 +766,7 @@ class TeX(object):
 
         except Exception, msg:
             log.error('Error while reading argument "%s" of %s%s (%s)' % \
-                          (name, parentNode.nodeName, self.lineInfo, msg))
+                      (name, parentNode.nodeName, self.lineInfo, msg))
             raise
 
         # Set catcodes back to original values
@@ -764,7 +781,7 @@ class TeX(object):
 
         # Normalize any document fragments
         if expanded and \
-           getattr(res,'nodeType',None) == Macro.DOCUMENT_FRAGMENT_NODE:
+                        getattr(res, 'nodeType', None) == Macro.DOCUMENT_FRAGMENT_NODE:
             res.normalize(getattr(self.ownerDocument, 'charsubs', []))
 
         # Re-enable Parameters
@@ -874,16 +891,16 @@ class TeX(object):
             source = [t]
             # A [ ... ], ( ... ), etc. grouping was found
             if t.catcode != Token.CC_ESCAPE and \
-               (t == begin or unicode(t) == unicode(begin)):
+                    (t == begin or unicode(t) == unicode(begin)):
                 level = 1
                 for t in tokens:
                     source.append(t)
                     if t.catcode != Token.CC_ESCAPE and \
-                       (t == begin or unicode(t) == unicode(begin)):
+                            (t == begin or unicode(t) == unicode(begin)):
                         toks.append(t)
                         level += 1
                     elif t.catcode != Token.CC_ESCAPE and \
-                         (t == end or unicode(t) == unicode(end)):
+                            (t == end or unicode(t) == unicode(end)):
                         level -= 1
                         if level == 0:
                             break
@@ -924,13 +941,13 @@ class TeX(object):
         # Get rid of the \relax token inserted above
         for t in self.itertokens():
             if (t.nodeType == Token.ELEMENT_NODE and t.nodeName == 'relax') \
-               or t.macroName == 'relax':
+                    or t.macroName == 'relax':
                 break
 
         return result
 
     def cast(self, tokens, dtype, subtype=None, delim=',',
-                   parentNode=None, name=None):
+             parentNode=None, name=None):
         """
         Cast the tokens to the appropriate type
 
@@ -970,10 +987,10 @@ class TeX(object):
         # Casting to specified type
         else:
             tokens = argtypes[dtype](tokens, subtype=subtype,
-                     delim=delim, parentNode=parentNode, name=name)
+                                     delim=delim, parentNode=parentNode, name=name)
 
         # Set parent node as needed
-        if getattr(tokens,'nodeType',None) == Macro.DOCUMENT_FRAGMENT_NODE:
+        if getattr(tokens, 'nodeType', None) == Macro.DOCUMENT_FRAGMENT_NODE:
             tokens.parentNode = parentNode
 
         return tokens
@@ -1073,8 +1090,8 @@ class TeX(object):
         self.cast()
 
         """
-#       try: return number(self.castString(tokens, **kwargs))
-#       except: return number(0)
+        #       try: return number(self.castString(tokens, **kwargs))
+        #       except: return number(0)
         return self.readInternalType(tokens, self.readNumber)
 
     def castDecimal(self, tokens, **kwargs):
@@ -1095,8 +1112,8 @@ class TeX(object):
         self.cast()
 
         """
-#       try: return self.castString(tokens, **kwargs)
-#       except: return decimal(0)
+        #       try: return self.castString(tokens, **kwargs)
+        #       except: return decimal(0)
         return self.readInternalType(tokens, self.readDecimal)
 
     def castDimen(self, tokens, **kwargs):
@@ -1114,8 +1131,8 @@ class TeX(object):
         self.cast()
 
         """
-#       try: return dimen(self.castString(tokens, **kwargs))
-#       except: return dimen(0)
+        #       try: return dimen(self.castString(tokens, **kwargs))
+        #       except: return dimen(0)
         return self.readInternalType(tokens, self.readDimen)
 
     def castMuDimen(self, tokens, **kwargs):
@@ -1133,8 +1150,8 @@ class TeX(object):
         self.cast()
 
         """
-#       try: return mudimen(self.castString(tokens, **kwargs))
-#       except: return mudimen(0)
+        #       try: return mudimen(self.castString(tokens, **kwargs))
+        #       except: return mudimen(0)
         return self.readInternalType(tokens, self.readMuDimen)
 
     def castGlue(self, tokens, **kwargs):
@@ -1152,8 +1169,8 @@ class TeX(object):
         self.cast()
 
         """
-#       try: return glue(self.castString(tokens, **kwargs))
-#       except: return glue(0)
+        #       try: return glue(self.castString(tokens, **kwargs))
+        #       except: return glue(0)
         return self.readInternalType(tokens, self.readGlue)
 
     def castMuGlue(self, tokens, **kwargs):
@@ -1171,8 +1188,8 @@ class TeX(object):
         self.cast()
 
         """
-#       try: return muglue(self.castString(tokens, **kwargs))
-#       except: return muglue(0)
+        #       try: return muglue(self.castString(tokens, **kwargs))
+        #       except: return muglue(0)
         return self.readInternalType(tokens, self.readMuGlue)
 
     def castList(self, tokens, type=list, **kwargs):
@@ -1334,13 +1351,13 @@ class TeX(object):
             # I think this happens only for the command line file.
             pass
         else:
-            TEXINPUTS = os.environ.get("TEXINPUTS",'')
+            TEXINPUTS = os.environ.get("TEXINPUTS", '')
             os.environ["TEXINPUTS"] = "%s%s%s%s" % (srcDir, os.path.pathsep, TEXINPUTS, os.path.pathsep)
 
         try:
             program = self.ownerDocument.config['general']['kpsewhich']
 
-            kwargs = {'stdout':subprocess.PIPE}
+            kwargs = {'stdout': subprocess.PIPE}
             if sys.platform.lower().startswith('win'):
                 kwargs['shell'] = True
 
@@ -1364,9 +1381,9 @@ class TeX(object):
 
         raise OSError, 'Could not find any file named: %s' % name
 
-#
-# Parsing helper methods for parsing numbers, spaces, dimens, etc.
-#
+    #
+    # Parsing helper methods for parsing numbers, spaces, dimens, etc.
+    #
 
     def readOptionalSpaces(self):
         """ Remove all whitespace """
@@ -1462,7 +1479,7 @@ class TeX(object):
         sign = self.readOptionalSigns()
         for t in self:
             if t.nodeType == Macro.ELEMENT_NODE and \
-               isinstance(t, ParameterCommand):
+                    isinstance(t, ParameterCommand):
                 ParameterCommand.enable()
                 return dimen(sign * dimen(t))
             self.pushToken(t)
@@ -1491,7 +1508,7 @@ class TeX(object):
         # internal unit
         for t in self:
             if t.nodeType == Macro.ELEMENT_NODE and \
-               isinstance(t, ParameterCommand):
+                    isinstance(t, ParameterCommand):
                 ParameterCommand.enable()
                 return dimen(t)
             self.pushToken(t)
@@ -1603,7 +1620,7 @@ class TeX(object):
                                                               optspace=optspace)))
                 for t in self:
                     if t.nodeType == Macro.ELEMENT_NODE and \
-                       isinstance(t, ParameterCommand):
+                            isinstance(t, ParameterCommand):
                         num = number(num * number(t))
                     else:
                         self.pushToken(t)
@@ -1611,11 +1628,11 @@ class TeX(object):
             # octal constant
             elif t == "'":
                 num = number(sign * int('0' + self.readSequence(string.octdigits,
-                                                   default='0', optspace=optspace), 8))
+                                                                default='0', optspace=optspace), 8))
             # hex constant
             elif t == '"':
                 num = number(sign * int('0x' + self.readSequence(string.hexdigits,
-                                               default='0', optspace=optspace), 16))
+                                                                 default='0', optspace=optspace), 16))
             # character token
             elif t == '`':
                 for t in self.itertokens():
@@ -1637,7 +1654,7 @@ class TeX(object):
         # internal/coerced glue
         for t in self:
             if t.nodeType == Macro.ELEMENT_NODE and \
-               isinstance(t, ParameterCommand):
+                    isinstance(t, ParameterCommand):
                 ParameterCommand.enable()
                 return glue(sign * glue(t))
             self.pushToken(t)
@@ -1646,18 +1663,18 @@ class TeX(object):
         stretch = self.readStretch()
         shrink = self.readShrink()
         ParameterCommand.enable()
-        return glue(sign*dim, stretch, shrink)
+        return glue(sign * dim, stretch, shrink)
 
     def readStretch(self):
         """ Read a stretch parameter from the stream """
         if self.readKeyword(['plus']):
-            return self.readDimen(units=dimen.units+['filll','fill','fil'])
+            return self.readDimen(units=dimen.units + ['filll', 'fill', 'fil'])
         return None
 
     def readShrink(self):
         """ Read a shrink parameter from the stream """
         if self.readKeyword(['minus']):
-            return self.readDimen(units=dimen.units+['filll','fill','fil'])
+            return self.readDimen(units=dimen.units + ['filll', 'fill', 'fil'])
         return None
 
     def readMuGlue(self):
@@ -1667,7 +1684,7 @@ class TeX(object):
         # internal/coerced muglue
         for t in self:
             if t.nodeType == Macro.ELEMENT_NODE and \
-               isinstance(t, ParameterCommand):
+                    isinstance(t, ParameterCommand):
                 ParameterCommand.enable()
                 return muglue(sign * muglue(t))
             self.pushToken(t)
@@ -1676,18 +1693,18 @@ class TeX(object):
         stretch = self.readMuStretch()
         shrink = self.readMuShrink()
         ParameterCommand.enable()
-        return muglue(sign*dim, stretch, shrink)
+        return muglue(sign * dim, stretch, shrink)
 
     def readMuStretch(self):
         """ Read a mustretch parameter from the stream """
         if self.readKeyword(['plus']):
-            return self.readDimen(units=mudimen.units+['filll','fill','fil'])
+            return self.readDimen(units=mudimen.units + ['filll', 'fill', 'fil'])
         return None
 
     def readMuShrink(self):
         """ Read a mushrink parameter from the stream """
         if self.readKeyword(['minus']):
-            return self.readDimen(units=mudimen.units+['filll','fill','fil'])
+            return self.readDimen(units=mudimen.units + ['filll', 'fill', 'fil'])
         return None
 
     def loadAuxiliaryFile(self):
@@ -1697,7 +1714,7 @@ class TeX(object):
         self.auxFiles.append(self.jobname)
         warn = self.ownerDocument.context.warnOnUnrecognized
         try:
-            f = self.kpsewhich(self.jobname+'.aux')
+            f = self.kpsewhich(self.jobname + '.aux')
             self.ownerDocument.context.warnOnUnrecognized = False
             dummy = plasTeX.Command()
             self.pushToken(dummy)
@@ -1709,9 +1726,8 @@ class TeX(object):
             log.warning(msg)
         self.ownerDocument.context.warnOnUnrecognized = warn
 
-#   @property
+# @property
 #   def jobname(self):
 #       """ Return the basename of the main input file """
 #       print self.inputs
 #       return os.path.basename(os.path.splitext(self.inputs[0][0].filename)[0])
-

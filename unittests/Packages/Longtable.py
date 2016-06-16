@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 
-import unittest, re, os, tempfile, shutil
-from plasTeX.TeX import TeX
+import os
+import re
+import shutil
+import tempfile
+import unittest
 from unittest import TestCase
+
 from BeautifulSoup import BeautifulSoup as Soup
 
-class Longtables(TestCase):
+from plasTeX.TeX import TeX
 
+
+class Longtables(TestCase):
     def runDocument(self, content):
         """
         Compile a document with the given content
@@ -61,10 +67,9 @@ class Longtables(TestCase):
 
         numcols = len(out.findAll('tr')[0].findAll('td'))
         assert numcols == 3, 'Wrong number of columns (expecting 3, but got %s): %s' % (numcols, out)
-        
+
         numcols = len(out.findAll('tr')[1].findAll('td'))
         assert numcols == 3, 'Wrong number of columns (expecting 3, but got %s): %s' % (numcols, out)
-        
 
     def testHeaders(self):
         headers = [
@@ -86,16 +91,16 @@ class Longtables(TestCase):
             assert numcols, 'No header cells found'
             assert numcols == 3, 'Wrong number of headers (expecting 3, but got %s) - %s - %s' % (numcols, header, out)
             text = [x.p.string.strip() for x in headercells]
-            assert text[0]=='M','Cell should contain M, but contains %s' % text[0]
-            assert text[1]=='N','Cell should contain N, but contains %s' % text[1]
-            assert text[2]=='O','Cell should contain O, but contains %s' % text[2]
-        
+            assert text[0] == 'M', 'Cell should contain M, but contains %s' % text[0]
+            assert text[1] == 'N', 'Cell should contain N, but contains %s' % text[1]
+            assert text[2] == 'O', 'Cell should contain O, but contains %s' % text[2]
+
             numcols = len(out.findAll('tr')[1].findAll('td'))
             assert numcols == 3, 'Wrong number of columns (expecting 3, but got %s) - %s - %s' % (numcols, header, out)
 
     def testFooters(self):
         footers = [
-           # Test \endfoot
+            # Test \endfoot
             r'M & N & O \\\endhead F & G & H \\\endfoot',
             r'M & N & O \\\endfirsthead F & G & H \\\endfoot',
             r'M & N & O \\\endfirsthead\n X & Y & Z \\\endhead F & G & H \\\endfoot',
@@ -138,10 +143,10 @@ class Longtables(TestCase):
             assert numcols, 'No header cells found'
             assert numcols == 3, 'Wrong number of headers (expecting 3, but got %s) - %s - %s' % (numcols, header, out)
             text = [x.p.string.strip() for x in headercells]
-            assert text[0]=='F','Cell should contain F, but contains %s' % text[0]
-            assert text[1]=='G','Cell should contain G, but contains %s' % text[1]
-            assert text[2]=='H','Cell should contain H, but contains %s' % text[2]
-        
+            assert text[0] == 'F', 'Cell should contain F, but contains %s' % text[0]
+            assert text[1] == 'G', 'Cell should contain G, but contains %s' % text[1]
+            assert text[2] == 'H', 'Cell should contain H, but contains %s' % text[2]
+
             numcols = len(out.findAll('tr')[1].findAll('td'))
             assert numcols == 3, 'Wrong number of columns (expecting 3, but got %s) - %s - %s' % (numcols, header, out)
 
@@ -183,8 +188,7 @@ class Longtables(TestCase):
         assert len(rows) == 1, 'There should be only 1 row, but found %s' % len(rows)
         content = re.sub(r'\s+', r' ', rows[0].textContent.strip())
         assert content == '1 2 3', 'Content should be "1 2 3", but is %s' % content
-        
+
 
 if __name__ == '__main__':
     unittest.main()
-

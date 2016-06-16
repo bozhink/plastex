@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
 import new
+
 from plasTeX import Command
 from plasTeX.Tokenizer import Token, Other
 
+
 class MakeShortVerb(Command):
     args = 'char:cs'
+
     def invoke(self, tex):
         # Parse arguments
         res = Command.invoke(self, tex)
@@ -15,13 +18,15 @@ class MakeShortVerb(Command):
         # Set the specified character as active
         self.ownerDocument.context.catcode(char, Token.CC_ACTIVE)
         # Create a new macro for the active character that calls _ShortVerb
-        newclass = new.classobj('active::%s' % char, (_ShortVerb,),{})
+        newclass = new.classobj('active::%s' % char, (_ShortVerb,), {})
         # Add the new macro to the global namespace
-        self.ownerDocument.context['active::%s' % char] = newclass        
+        self.ownerDocument.context['active::%s' % char] = newclass
         return res
-        
+
+
 class _ShortVerb(Command):
     """ Command to handle short verbatims """
+
     def invoke(self, tex):
         # Push the active character back to the input stream as
         # an Other token

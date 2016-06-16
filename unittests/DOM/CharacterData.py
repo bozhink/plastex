@@ -2,10 +2,11 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.DOM import *
 
-class CharacterDataTest(TestCase):
 
+class CharacterDataTest(TestCase):
     def testNodeValue(self):
         doc = Document()
         one = doc.createTextNode('one')
@@ -15,23 +16,23 @@ class CharacterDataTest(TestCase):
         doc = Document()
         one = doc.createTextNode('one')
         clone = one.cloneNode()
-        assert one == clone 
+        assert one == clone
 
     def testData(self):
         doc = Document()
         one = doc.createTextNode('one')
-        assert one.data == 'one' 
-    
+        assert one.data == 'one'
+
     def testLength(self):
         doc = Document()
         one = doc.createTextNode('one')
         assert one.length == 3
-        
+
     def testTextContent(self):
         doc = Document()
         one = doc.createTextNode('one')
         assert one.textContent == 'one'
-        
+
     def testIsSameNode(self):
         doc = Document()
         one = doc.createTextNode('one')
@@ -47,8 +48,7 @@ class CharacterDataTest(TestCase):
         assert one.isEqualNode(one)
         assert one.isEqualNode(two)
         assert not one.isEqualNode(three)
-        
+
 
 if __name__ == '__main__':
     unittest.main()
-

@@ -11,15 +11,23 @@ from plasTeX import Logging
 
 log = Logging.getLogger()
 
+
 class enuminame(Command): unicode = ''
+
+
 class enumiiname(Command): unicode = ''
+
+
 class enumiiiname(Command): unicode = ''
+
+
 class enumivname(Command): unicode = ''
+
 
 class List(Environment):
     """ Base class for all list-based environments """
     depth = 0
-    counters = ['enumi','enumii','enumiii','enumiv']
+    counters = ['enumi', 'enumii', 'enumiii', 'enumiv']
     blockType = True
 
     class item(Command):
@@ -31,7 +39,7 @@ class List(Environment):
         def invoke(self, tex):
             """ Set up counter for this list depth """
             try:
-                self.counter = List.counters[List.depth-1]
+                self.counter = List.counters[List.depth - 1]
                 self.position = self.ownerDocument.context.counters[self.counter].value + 1
             except (KeyError, IndexError):
                 pass
@@ -75,79 +83,104 @@ class List(Environment):
                 elif tok.nodeName == 'setcounter':
                     tok.digest([])
                     continue
-#               if tok.nodeName != 'item':
-#                   log.warning('dropping non-item from beginning of list')
-#                   continue
+                # if tok.nodeName != 'item':
+                #                   log.warning('dropping non-item from beginning of list')
+                #                   continue
                 tokens.push(tok)
                 break
-        Environment.digest(self, tokens) 
+        Environment.digest(self, tokens)
 
-#
+        #
+
+
 # Counters -- enumi, enumii, enumiii, enumiv
 #            
 
 # C.6.2
-    
-class itemize(List): 
+
+class itemize(List):
     pass
+
 
 class labelitemi(Command):
     pass
+
+
 class labelitemii(Command):
     pass
+
+
 class labelitemiii(Command):
     pass
+
+
 class labelitemiv(Command):
     pass
 
-class enumerate_(List): 
+
+class enumerate_(List):
     macroName = 'enumerate'
     args = '[ type ]'  # Actually defined in the enumerate package, but it doesn't hurt
 
-class description(List): 
+
+class description(List):
     pass
+
 
 # C.6.3
 
-class trivlist(List): 
+class trivlist(List):
     pass
+
 
 class ConfigurableList(List):
     macroName = 'list'
     args = 'defaultlabel decls:nox'
 
+
 class topsep(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class partopsep(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class itemsep(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class parsep(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class leftmargin(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class rightmargin(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class listparindent(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class itemindent(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class labelsep(DimenCommand):
     value = DimenCommand.new(0)
+
 
 class labelwidth(DimenCommand):
     value = DimenCommand.new(0)
 
+
 class makelabel(Command):
     args = 'label'
+
 
 class usecounter(Command):
     args = 'name:str'

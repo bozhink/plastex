@@ -14,7 +14,9 @@ just here for backwards compatibility.
 
 from plasTeX.Renderers.PageTemplate import Renderer
 
+
 class ZPT(Renderer):
     pass
+
 
 Renderer = ZPT

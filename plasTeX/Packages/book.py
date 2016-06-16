@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import os, glob
-from plasTeX import Command, Environment, TheCounter
+from plasTeX import Command, TheCounter
+
 
 def ProcessOptions(options, document):
     context = document.context
@@ -13,17 +13,17 @@ def ProcessOptions(options, document):
     context.newcounter('enumiv', resetby='enumiii')
 
     # Sections
-    context.newcounter('part', resetby='volume', 
+    context.newcounter('part', resetby='volume',
                        format='$part')
-    context.newcounter('chapter', resetby='part', 
+    context.newcounter('chapter', resetby='part',
                        format='$chapter')
-    context.newcounter('section', resetby='chapter', 
+    context.newcounter('section', resetby='chapter',
                        format='${thechapter}.${section}')
-    context.newcounter('subsection', resetby='section', 
+    context.newcounter('subsection', resetby='section',
                        format='${thesection}.${subsection}')
-    context.newcounter('subsubsection', resetby='subsection', 
+    context.newcounter('subsubsection', resetby='subsection',
                        format='${thesubsection}.${subsubsection}')
-    context.newcounter('paragraph', resetby='subsubsection', 
+    context.newcounter('paragraph', resetby='subsubsection',
                        format='${thesubsubsection}.${paragraph}')
     context.newcounter('subparagraph', resetby='paragraph',
                        format='${theparagraph}.${subparagraph}')
@@ -38,7 +38,7 @@ def ProcessOptions(options, document):
     context.newcounter('page')
 
     # Floats
-    context.newcounter('figure', resetby='chapter', 
+    context.newcounter('figure', resetby='chapter',
                        format='${thechapter}.${figure}')
     context.newcounter('table', resetby='chapter',
                        format='${thechapter}.${table}')
@@ -59,20 +59,23 @@ def ProcessOptions(options, document):
             language = True
             context.loadLanguage(key, document)
 
-class frontmatter(Command): 
+
+class frontmatter(Command):
     pass
+
 
 class mainmatter(Command):
     pass
 
+
 class backmatter(Command):
     pass
 
-class appendix(Command):
 
+class appendix(Command):
     class thechapter(TheCounter):
         format = '${chapter.Alph}'
 
     def invoke(self, tex):
         self.ownerDocument.context.counters['chapter'].setcounter(0)
-        self.ownerDocument.context['thechapter'] = type(self).thechapter 
+        self.ownerDocument.context['thechapter'] = type(self).thechapter

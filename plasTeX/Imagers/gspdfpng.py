@@ -1,13 +1,17 @@
 #!/usr/bin/env python
 
+import glob
+import sys
+
+import plasTeX.Imagers
 from plasTeX.Logging import getLogger
-import plasTeX.Imagers, glob, sys
 
 status = getLogger('status')
 
 gs = 'gs'
 if sys.platform.startswith('win'):
-   gs = 'gswin32c'
+    gs = 'gswin32c'
+
 
 class GSPDFPNG(plasTeX.Imagers.Imager):
     """ Imager that uses gs to convert pdf to png """
@@ -27,10 +31,10 @@ class GSPDFPNG(plasTeX.Imagers.Imager):
             PILImage = plasTeX.Imagers.PILImage
             scaledown = 2.2
             for filename in glob.glob('img*.png'):
-                status.info('[%s]' % filename,)
-                img = plasTeX.Imagers.autoCrop(PILImage.open(filename), 
+                status.info('[%s]' % filename, )
+                img = plasTeX.Imagers.autoCrop(PILImage.open(filename),
                                                margin=3)[0]
-                width, height = [int(float(x)/scaledown) for x in img.size]
+                width, height = [int(float(x) / scaledown) for x in img.size]
                 img = img.resize((width, height), PILImage.ANTIALIAS)
                 img = img.point(self.toWhite)
                 img.save(filename)
@@ -43,7 +47,8 @@ class GSPDFPNG(plasTeX.Imagers.Imager):
     def formatConfigOptions(self, config):
         options = []
         if config['resolution']:
-            options.append(('-r%s' % config['resolution'], '')) 
+            options.append(('-r%s' % config['resolution'], ''))
         return options
+
 
 Imager = GSPDFPNG

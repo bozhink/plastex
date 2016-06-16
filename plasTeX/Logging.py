@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-import textwrap, types
+import textwrap
+import types
 from logging import CRITICAL, DEBUG, INFO, Logger, StreamHandler, Formatter
 from logging import addLevelName, setLoggerClass, FileHandler, Filter
+
 from plasTeX.Config import config as _config
 
 MAX_WIDTH = 75
@@ -25,13 +27,15 @@ addLevelName(DEBUG5, 'DEBUG-5')
 _Logger = Logger
 _StreamHandler = StreamHandler
 
-class Logger(_Logger):
 
+class Logger(_Logger):
     def __init__(self, name='', *args, **kwargs):
         _Logger.__init__(self, name, *args, **kwargs)
         self.propagate = 0
-        try: level = eval(_config['logging'][name])
-        except: level = None
+        try:
+            level = eval(_config['logging'][name])
+        except:
+            level = None
         if not name:
             handler = StreamHandler()
             handler.setFormatter(StreamFormatter(ROOT_LOG_FORMAT))
@@ -66,7 +70,6 @@ class Logger(_Logger):
 
 
 class StreamFormatter(Formatter):
-
     def format(self, record):
         """ Format the specified record as text. """
         record.message = record.getMessage()
@@ -81,7 +84,6 @@ class StreamFormatter(Formatter):
 
 
 class StreamHandler(_StreamHandler):
-
     currentpos = 0
     lastwrite = None
 
@@ -89,7 +91,7 @@ class StreamHandler(_StreamHandler):
         """ Emit a record.  """
         try:
             msg = self.format(record)
-            if not hasattr(types, "UnicodeType"): #if no unicode support...
+            if not hasattr(types, "UnicodeType"):  # if no unicode support...
                 self.checkLastWrite()
                 self.stream.write("%s\n" % msg)
             else:
@@ -125,7 +127,7 @@ class StatusHandler(StreamHandler):
         """ Emit a record.  """
         try:
             msg = self.format(record)
-            if not hasattr(types, "UnicodeType"): #if no unicode support...
+            if not hasattr(types, "UnicodeType"):  # if no unicode support...
                 msg = str(msg)
                 self.checkPos(len(msg))
                 self.stream.write(msg)
@@ -148,7 +150,8 @@ setLoggerClass(Logger)
 
 root = Logger()
 
-_loggers = {None:root}
+_loggers = {None: root}
+
 
 def getLogger(name=None):
     """
@@ -163,10 +166,12 @@ def getLogger(name=None):
     else:
         return root
 
+
 def disableLogging():
     """ Disable all logging """
     for logger in _loggers.values():
         logger.setLevel(CRITICAL)
+
 
 def fileLogging(fname):
     """
@@ -175,9 +180,11 @@ def fileLogging(fname):
     Add a filter to omit dots.
 
     """
+
     def dotfilter(record):
         if record.msg.strip() != '.':
             return True
+
     logfilter = Filter()
     logfilter.filter = dotfilter
 

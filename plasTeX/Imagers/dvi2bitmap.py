@@ -2,6 +2,7 @@
 
 import plasTeX.Imagers
 
+
 class DVI2Bitmap(plasTeX.Imagers.Imager):
     """ Imager that uses dvi2bitmap """
 
@@ -17,7 +18,8 @@ class DVI2Bitmap(plasTeX.Imagers.Imager):
     def formatConfigOptions(self, config):
         options = []
         if config['resolution']:
-            options.append(('--resolution=%s' % config['resolution'], '')) 
+            options.append(('--resolution=%s' % config['resolution'], ''))
         return options
+
 
 Imager = DVI2Bitmap

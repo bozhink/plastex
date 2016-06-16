@@ -2,64 +2,78 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX import *
 from plasTeX.TeX import TeX
 
-class ArgumentParsing(TestCase):
 
+class ArgumentParsing(TestCase):
     def testArgumentString(self):
         class foobar(Macro):
             args = 'arg1'
+
         arg = foobar().arguments
-        expected = [Argument('arg1', 0, {'expanded':True})]
+        expected = [Argument('arg1', 0, {'expanded': True})]
         assert arg == expected, '"%s" != "%s"' % (arg, expected)
-    
+
     def testArgumentString2(self):
         class foobar(Macro):
             args = '* [ opt ] arg1'
+
         arg = foobar().arguments
-        expected = [Argument('*modifier*', 0, {'spec':'*'}),
-                    Argument('opt', 1, {'spec':'[]','expanded':True}), 
-                    Argument('arg1', 2, {'expanded':True})]
+        expected = [Argument('*modifier*', 0, {'spec': '*'}),
+                    Argument('opt', 1, {'spec': '[]', 'expanded': True}),
+                    Argument('arg1', 2, {'expanded': True})]
         assert arg == expected, '"%s" != "%s"' % (arg, expected)
-    
+
     def testArgumentString3(self):
         class foobar(Macro):
             args = '[ opt:dict ] arg1:list'
+
         arg = foobar().arguments
-        expected = [Argument('opt', 0, {'spec':'[]','type':'dict','expanded':True,'delim':None}), 
-                    Argument('arg1', 1, {'type':'list','expanded':True,'delim':None})]
+        expected = [Argument('opt', 0, {'spec': '[]', 'type': 'dict', 'expanded': True, 'delim': None}),
+                    Argument('arg1', 1, {'type': 'list', 'expanded': True, 'delim': None})]
         assert arg == expected, '"%s" != "%s"' % (arg, expected)
-    
+
     def testArgumentString4(self):
         class foobar(Macro):
             args = '[ opt:dict(;) ] arg1:list'
+
         arg = foobar().arguments
-        expected = [Argument('opt', 0, {'spec':'[]','type':'dict','delim':';','expanded':True}), 
-                    Argument('arg1', 1, {'type':'list','expanded':True,'delim':None})]
+        expected = [Argument('opt', 0, {'spec': '[]', 'type': 'dict', 'delim': ';', 'expanded': True}),
+                    Argument('arg1', 1, {'type': 'list', 'expanded': True, 'delim': None})]
         assert arg == expected, '"%s" != "%s"' % (arg, expected)
-    
+
     def testArgumentString5(self):
         class foobar(Macro):
             args = '[ opt:dict(;) ] < arg1:str >'
+
         arg = foobar().arguments
-        expected = [Argument('opt', 0, {'spec':'[]','type':'dict','delim':';','expanded':True}), 
-                    Argument('arg1', 1, {'type':'str','spec':'<>','expanded':True, 'delim':None})]
+        expected = [Argument('opt', 0, {'spec': '[]', 'type': 'dict', 'delim': ';', 'expanded': True}),
+                    Argument('arg1', 1, {'type': 'str', 'spec': '<>', 'expanded': True, 'delim': None})]
         assert arg == expected, '"%s" != "%s"' % (arg, expected)
-    
+
     def _testInvalidArgumentString(self):
         class foobar(Macro):
             args = '[ opt:dict(;) ] < arg1:str(+) >'
-        try: arg = foobar().arguments
-        except ValueError: pass
-        else: self.fail("Expected a ValueError")
+
+        try:
+            arg = foobar().arguments
+        except ValueError:
+            pass
+        else:
+            self.fail("Expected a ValueError")
 
     def _testInvalidArgumentString2(self):
         class foobar(Macro):
             args = '[ opt:dict(;) ] < arg1:str(*) >'
-        try: arg = foobar().arguments
-        except ValueError: pass
-        else: self.fail("Expected a ValueError")
+
+        try:
+            arg = foobar().arguments
+        except ValueError:
+            pass
+        else:
+            self.fail("Expected a ValueError")
 
     def testStringArgument(self):
         s = TeX()
@@ -86,21 +100,21 @@ class ArgumentParsing(TestCase):
         s = TeX()
         s.input('{foo, {bar}, one}')
         arg = s.readArgument(type='list')
-        output = ['foo','bar','one']
+        output = ['foo', 'bar', 'one']
         assert arg == output, '"%s" != "%s"' % (arg, output)
 
     def testListArgument2(self):
         s = TeX()
         s.input('{foo; {bar}; one}')
         arg = s.readArgument(type='list', delim=';')
-        output = ['foo','bar','one']
+        output = ['foo', 'bar', 'one']
         assert arg == output, '"%s" != "%s"' % (arg, output)
 
     def testDictArgument(self):
         s = TeX()
         s.input('{one=1, two={2}, three=3}')
         arg = s.readArgument(type='dict')
-        output = {'one':'1', 'two':'2', 'three':'3'}
+        output = {'one': '1', 'two': '2', 'three': '3'}
         assert arg == output, '"%s" != "%s"' % (arg, output)
 
     def testDictArgument2(self):
@@ -109,7 +123,7 @@ class ArgumentParsing(TestCase):
         arg = s.readArgument(type='dict')
         keys = arg.keys()
         keys.sort()
-        expectkeys = ['four','one','three','two']
+        expectkeys = ['four', 'one', 'three', 'two']
         assert keys == expectkeys, '"%s" != "%s"' % (keys, expectkeys)
         assert arg['one'] == '1'
         assert arg['four'] == '4'
@@ -174,12 +188,12 @@ class ArgumentParsing(TestCase):
         # No number
         s.input('{a}')
         arg = s.readArgument(type='dimen')
-        assert arg == dimen(0), arg 
-        
+        assert arg == dimen(0), arg
+
         # No number
         s.input('b')
         arg = s.readArgument(type='dimen')
-        assert arg == dimen(0), arg 
+        assert arg == dimen(0), arg
 
         # Coerced dimen
         s.input('{\mycount}')
@@ -271,12 +285,12 @@ class ArgumentParsing(TestCase):
         # No number
         s.input('{a}')
         arg = s.readArgument(type='number')
-        assert arg == count(0), arg 
-        
+        assert arg == count(0), arg
+
         # No number
         s.input('b')
         arg = s.readArgument(type='number')
-        assert arg == count(0), arg 
+        assert arg == count(0), arg
 
         # Coerced dimen
         s.input('{\mydimen}')
@@ -372,7 +386,7 @@ class ArgumentParsing(TestCase):
         s.input('{1, \mycount, 3}')
         arg = s.readArgument(type='list', subtype='int')
         assert arg == [1, 120, 3], arg
-    
+
     def testDictTypes(self):
         s = TeX()
         s.input(r'''\newcount\mycount\mycount=120
@@ -389,4 +403,3 @@ class ArgumentParsing(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

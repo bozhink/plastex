@@ -15,59 +15,68 @@ followed by a bunch of imaginary command line options and arguments.
 
 """
 
-import sys, string, re, urllib, copy, types, os
-from plasTeX.dictutils import ordereddict
-from UserList import UserList
+import os
+import re
+import string
+import sys
+import types
+import urllib
 from UserDict import UserDict
 from textwrap import wrap
 
-__all__ = ['ConfigManager','BooleanOption','IntegerOption','CompoundOption',
-           'MultiOption','GenericOption','FloatOption','StringOption',
-           'InputFileOption','OutputFileOption','InputDirectoryOption',
-           'OutputDirectoryOption','CountedOption',
-           'BooleanArgument','IntegerArgument','CompoundArgument',
-           'MultiArgument','GenericArgument','FloatArgument','StringArgument',
-           'InputFileArgument','OutputFileArgument','InputDirectoryArgument',
-           'OutputDirectoryArgument','CountedArgument',
-           'BUILTIN','CODE','REGISTRY','CONFIG','CONFIGFILE','ENVIRON',
-           'ENVIRONMENT','COMMANDLINE','ALL','DEFAULTSECT',
-           'ON','OFF','TRUE','FALSE','YES','NO','CommandLineManager',
-           'GetoptError','ConfigError','NoOptionError']
+from plasTeX.dictutils import ordereddict
+
+__all__ = ['ConfigManager', 'BooleanOption', 'IntegerOption', 'CompoundOption',
+           'MultiOption', 'GenericOption', 'FloatOption', 'StringOption',
+           'InputFileOption', 'OutputFileOption', 'InputDirectoryOption',
+           'OutputDirectoryOption', 'CountedOption',
+           'BooleanArgument', 'IntegerArgument', 'CompoundArgument',
+           'MultiArgument', 'GenericArgument', 'FloatArgument', 'StringArgument',
+           'InputFileArgument', 'OutputFileArgument', 'InputDirectoryArgument',
+           'OutputDirectoryArgument', 'CountedArgument',
+           'BUILTIN', 'CODE', 'REGISTRY', 'CONFIG', 'CONFIGFILE', 'ENVIRON',
+           'ENVIRONMENT', 'COMMANDLINE', 'ALL', 'DEFAULTSECT',
+           'ON', 'OFF', 'TRUE', 'FALSE', 'YES', 'NO', 'CommandLineManager',
+           'GetoptError', 'ConfigError', 'NoOptionError']
 
 DEFAULTSECT = "DEFAULT"
 MAX_INTERPOLATION_DEPTH = 10
 ON = TRUE = YES = 1
 OFF = FALSE = NO = 0
 
-TERMINAL_WIDTH = 76   # Maximum width of terminal 
+TERMINAL_WIDTH = 76  # Maximum width of terminal
 MAX_NAME_WIDTH_RATIO = 0.25  # Max fraction of terminal to use for option
-PREPAD = 2   # Padding before each option name in usage
-GUTTER = 4   # Space between option name and description in usage
+PREPAD = 2  # Padding before each option name in usage
+GUTTER = 4  # Space between option name and description in usage
 
 # Possible values for `source'.
 BUILTIN = 2
 CODE = 4
-REGISTRY = 8 
+REGISTRY = 8
 CONFIG = CONFIGFILE = 16
 ENVIRON = ENVIRONMENT = 32
 COMMANDLINE = 64
 ALL = 0xffffff
 
+
 # Exception classes
 class Error(Exception):
     """ Generic exception """
+
     def __init__(self, msg=''):
         self.msg = msg
         Exception.__init__(self, msg)
 
     def __str__(self):
         return self.msg
+
     __repr__ = __str__
 
 
 # Exceptions while parsing command line
 class GetoptError(Error):
     """ Generic command line exception """
+
     def __init__(self, msg, opt):
         self.msg = msg
         self.opt = opt
@@ -75,91 +84,113 @@ class GetoptError(Error):
 
     def __str__(self):
         return self.msg
+
     __repr__ = __str__
+
 
 class RequiresArgument(GetoptError):
     """ Exception for a missing argument """
 
+
 class MandatoryOption(GetoptError):
     """ Exception for a missing option """
+
 
 class UnspecifiedArgument(GetoptError):
     """ Exception for an argument when none was expected """
 
+
 class UnrecognizedArgument(GetoptError):
     """ Exception for an argument that is unrecognized """
+
 
 class NonUniquePrefix(GetoptError):
     """ Exception for multiple option prefixes that match a given option """
 
+
 class UnknownCompoundGroup(GetoptError):
-    """ Exception for an unknown grouping character used for a compound """  
+    """ Exception for an unknown grouping character used for a compound """
+
     def __init__(self, msg=''):
         GetoptError.__init__(self, msg, '')
 
 
 # Exceptions while reading/parsing configuration files
 class ConfigError(Error):
-   """ Generic configuration file exception """
+    """ Generic configuration file exception """
+
 
 class NoSectionError(ConfigError):
     """ Exception for missing sections """
+
     def __init__(self, section):
         ConfigError.__init__(self, 'No section: %s' % section)
         self.section = section
 
+
 class DuplicateSectionError(ConfigError):
     """ Exception for duplicate sections """
+
     def __init__(self, section):
         ConfigError.__init__(self, "Section %s already exists" % section)
         self.section = section
 
+
 class InvalidOptionError(GetoptError, ConfigError):
     """ Exception for invalid values for a given option """
+
     def __init__(self, option, value, msg='', type=''):
         if type: type += ' '
         if not msg:
-            msg="Invalid value for %soption `%s'" % (type, option)
-        ConfigError.__init__(self, msg+': %s' % value)
+            msg = "Invalid value for %soption `%s'" % (type, option)
+        ConfigError.__init__(self, msg + ': %s' % value)
         self.option = option
         self.value = value
 
+
 class NoOptionError(ConfigError):
     """ Exception for missing a missing option in a section """
+
     def __init__(self, option, section):
         ConfigError.__init__(self, "No option `%s' in section: %s" %
-                       (option, section))
+                             (option, section))
         self.option = option
         self.section = section
 
+
 class InterpolationError(ConfigError):
     """ Exception for message interpolation errors """
+
     def __init__(self, reference, option, section, rawval):
         ConfigError.__init__(self,
-                       "Bad value substitution:\n"
-                       "\tsection: [%s]\n"
-                       "\toption : %s\n"
-                       "\tkey    : %s\n"
-                       "\trawval : %s\n"
-                       % (section, option, reference, rawval))
+                             "Bad value substitution:\n"
+                             "\tsection: [%s]\n"
+                             "\toption : %s\n"
+                             "\tkey    : %s\n"
+                             "\trawval : %s\n"
+                             % (section, option, reference, rawval))
         self.reference = reference
         self.option = option
         self.section = section
 
+
 class InterpolationDepthError(ConfigError):
     """ Exception for excessive recursion in interpolation """
+
     def __init__(self, option, section, rawval):
         ConfigError.__init__(self,
-                       "Value interpolation too deeply recursive:\n"
-                       "\tsection: [%s]\n"
-                       "\toption : %s\n"
-                       "\trawval : %s\n"
-                       % (section, option, rawval))
+                             "Value interpolation too deeply recursive:\n"
+                             "\tsection: [%s]\n"
+                             "\toption : %s\n"
+                             "\trawval : %s\n"
+                             % (section, option, rawval))
         self.option = option
         self.section = section
 
+
 class ParsingError(ConfigError):
     """ Exception for errors occurring during parsing of a config file """
+
     def __init__(self, filename):
         ConfigError.__init__(self, 'File contains parsing errors: %s' % filename)
         self.filename = filename
@@ -169,18 +200,24 @@ class ParsingError(ConfigError):
         self.errors.append((lineno, line))
         self.msg = self.msg + '\n\t[line %2d]: %s' % (lineno, line)
 
+
 class TooFewValues(GetoptError):
-   """ Got fewer values than expected """
-   def __init__(self, msg):
-      GetoptError.__init__(self, msg, '')
+    """ Got fewer values than expected """
+
+    def __init__(self, msg):
+        GetoptError.__init__(self, msg, '')
+
 
 class TooManyValues(GetoptError):
-   """ Got more values than expected """
-   def __init__(self, msg):
-      GetoptError.__init__(self, msg, '')
+    """ Got more values than expected """
+
+    def __init__(self, msg):
+        GetoptError.__init__(self, msg, '')
+
 
 class MissingSectionHeaderError(ParsingError):
     """ Exception for options that occur before a section heading """
+
     def __init__(self, filename, lineno, line):
         ConfigError.__init__(
             self,
@@ -215,7 +252,7 @@ class ConfigSection(UserDict, object):
             setattr(newcopy, key, value)
         for key, value in self.data.items():
             newcopy.data[key] = value.copy()
-        return newcopy        
+        return newcopy
 
     def setParent(self, parent):
         """ Set the parent ConfigManager instance """
@@ -245,41 +282,41 @@ class ConfigSection(UserDict, object):
         Returns: None
 
         """
-        typemap = {str:StringOption, int:IntegerOption,
-                   float:FloatOption, list:MultiOption, tuple:MultiOption}
+        typemap = {str: StringOption, int: IntegerOption,
+                   float: FloatOption, list: MultiOption, tuple: MultiOption}
 
         if self.data.has_key(option):
-           if self.data[option].source <= source:
-              self.data[option].source = source
-              self.data[option].setValue(value)
+            if self.data[option].source <= source:
+                self.data[option].source = source
+                self.data[option].setValue(value)
 
         else:
-           if isinstance(value, GenericOption):
-              value.setParent(self)
-              value.name = str(option)
-              self.data[option] = value
+            if isinstance(value, GenericOption):
+                value.setParent(self)
+                value.name = str(option)
+                self.data[option] = value
 
-           elif type(value) in typemap.keys():
-              for key, opttype in typemap.items():
-                 if isinstance(value, key):
-                    # Handle booleans this way until support for
-                    # true booleans shows up in Python.
-                    if type(value) == str and \
-                       str(value).lower().strip() in ['on','off','true','false','yes','no']:
-                       opttype = BooleanOption
-                    self.data[option] = opttype(name=option, source=source)
-                    self.data[option].setParent(self)
-                    self.data[option].name = str(option)
-                    self.data[option].setValue(value)
-                    break
-           else:
-              raise TypeError, \
+            elif type(value) in typemap.keys():
+                for key, opttype in typemap.items():
+                    if isinstance(value, key):
+                        # Handle booleans this way until support for
+                        # true booleans shows up in Python.
+                        if type(value) == str and \
+                                        str(value).lower().strip() in ['on', 'off', 'true', 'false', 'yes', 'no']:
+                            opttype = BooleanOption
+                        self.data[option] = opttype(name=option, source=source)
+                        self.data[option].setParent(self)
+                        self.data[option].name = str(option)
+                        self.data[option].setValue(value)
+                        break
+            else:
+                raise TypeError, \
                     'Could not find valid option type for "%s"' % value
 
     def __setitem__(self, key, value):
         """ Set the item in the dictionary """
         self.set(key, value, source=BUILTIN)
-    
+
     def getint(self, option):
         """ Get the option value and cast it to an integer """
         return int(self[option])
@@ -327,11 +364,11 @@ class ConfigSection(UserDict, object):
         # If we have a list, see if any strings need interpolation.
         if type(value) in [list, tuple]:
             strings = [s for s in value
-                         if isinstance(s,str) and s.find('%(')+1]
+                       if isinstance(s, str) and s.find('%(') + 1]
             if not strings: return value
 
         # If we have a string, but no interpolation is needed, bail out.
-        elif not(isinstance(value,str)) or value.find("%(") < 0:
+        elif not (isinstance(value, str)) or value.find("%(") < 0:
             return value
 
         # otherwise needs interpolation...
@@ -416,25 +453,25 @@ class ConfigSection(UserDict, object):
         keys.sort()
         for key in keys:
             if source & self.data[key].source:
-               raw = self.getraw(key)
-               option = self.data[key]
+                raw = self.getraw(key)
+                option = self.data[key]
 
-               # Bypass unset options
-               if isinstance(option, MultiOption) and raw == []: continue
-               if raw == None: continue
+                # Bypass unset options
+                if isinstance(option, MultiOption) and raw == []: continue
+                if raw == None: continue
 
-               # Print description or summary of the option as well
-               comment = ''
-               if option.summary: comment = option.summary
-               if option.description: comment = option.description
-               if comment:
-                  comment = comment.strip() % option.names()
-                  comment = comment.split('\n')
-                  s += '\n; %s\n' % '\n; '.join(comment)
+                # Print description or summary of the option as well
+                comment = ''
+                if option.summary: comment = option.summary
+                if option.description: comment = option.description
+                if comment:
+                    comment = comment.strip() % option.names()
+                    comment = comment.split('\n')
+                    s += '\n; %s\n' % '\n; '.join(comment)
 
-               value = str(option).replace('\n', '\n    ')
-               if value.find('\n') + 1: value = '\n    ' + value
-               s += "%s %s %s\n" % (key, ConfigManager.OPTIONSEP, value)
+                value = str(option).replace('\n', '\n    ')
+                if value.find('\n') + 1: value = '\n    ' + value
+                s += "%s %s %s\n" % (key, ConfigManager.OPTIONSEP, value)
         return s
 
     def __str__(self):
@@ -447,22 +484,21 @@ class ConfigSection(UserDict, object):
 
 
 class ConfigManager(UserDict, object):
-
     # Regular expressions for parsing section headers and options.
     SECTCRE = re.compile(
-        r'\['                                 # [
-        r'(?P<header>[^]]+)'                  # very permissive!
-        r'\]'                                 # ]
-        )
+        r'\['  # [
+        r'(?P<header>[^]]+)'  # very permissive!
+        r'\]'  # ]
+    )
 
     OPTCRE = re.compile(
-        r'(?P<option>[]\-[\w_.*,(){}]+)'      # a lot of stuff found by IvL
-        r'[ \t]*(?P<vi>[:=])[ \t]*'           # any number of space/tab,
-                                              # followed by separator
-                                              # (either : or =), followed
-                                              # by any # space/tab
-        r'(?P<value>.*)$'                     # everything up to eol
-        )
+        r'(?P<option>[]\-[\w_.*,(){}]+)'  # a lot of stuff found by IvL
+        r'[ \t]*(?P<vi>[:=])[ \t]*'  # any number of space/tab,
+        # followed by separator
+        # (either : or =), followed
+        # by any # space/tab
+        r'(?P<value>.*)$'  # everything up to eol
+    )
 
     # Option separator used in printing out INI format
     OPTIONSEP = '='
@@ -484,7 +520,7 @@ class ConfigManager(UserDict, object):
         """
         UserDict.__init__(self)
         self[DEFAULTSECT] = ConfigSection(DEFAULTSECT, defaults)
-        self.strict = 1     # Raise exception for unknown options
+        self.strict = 1  # Raise exception for unknown options
         self._categories = {}  # Dictionary of option categories
         self.unrecognized = []
 
@@ -509,13 +545,13 @@ class ConfigManager(UserDict, object):
 
         """
         if arg1 == arg2 == None:
-           raise ValueError, 'Short and long prefixes cannot both be None.'
+            raise ValueError, 'Short and long prefixes cannot both be None.'
         if arg2 is None:
-           cls.long_prefix = arg1
-           cls.short_prefix = None
+            cls.long_prefix = arg1
+            cls.short_prefix = None
         else:
-           cls.long_prefix = arg2
-           cls.short_prefix = arg1
+            cls.long_prefix = arg2
+            cls.short_prefix = arg1
 
     set_prefixes = classmethod(set_prefixes)
 
@@ -533,16 +569,18 @@ class ConfigManager(UserDict, object):
 
         """
         self[DEFAULTSECT]['__help_on__'] = MultiOption(
-           """ Display help on listed option names """,
-           options = '%shelp-on' % self.long_prefix[0],
-           category = category,
-           callback = self.usage_on,
+            """ Display help on listed option names """,
+            options='%shelp-on' % self.long_prefix[0],
+            category=category,
+            callback=self.usage_on,
         )
 
     def remove_help_on_option(self):
         """ Remove the --help-on option """
-        try: del self[DEFAULTSECT]['__help_on__']
-        except: pass
+        try:
+            del self[DEFAULTSECT]['__help_on__']
+        except:
+            pass
 
     def add_category(self, key, title):
         """
@@ -561,22 +599,22 @@ class ConfigManager(UserDict, object):
         string -- the same key given as the first argument
 
         """
-#       if not self._categories:
-#          self._categories['__categories__'] = 'Help Categories'
-#       if not self.has_key('__categories__'):
-#          self.add_section('__categories__')
-#       self['__categories__'][key] = BooleanOption(title,
-#            options='%shelp-%s' % (self.long_prefix, key),
-#            category='__categories__')
+        #       if not self._categories:
+        #          self._categories['__categories__'] = 'Help Categories'
+        #       if not self.has_key('__categories__'):
+        #          self.add_section('__categories__')
+        #       self['__categories__'][key] = BooleanOption(title,
+        #            options='%shelp-%s' % (self.long_prefix, key),
+        #            category='__categories__')
         self._categories[key] = title
         return key
 
     def get_category(self, key):
         """ Return the title of the given category """
         if type(key) not in [list, tuple]:
-           key = [key]
+            key = [key]
         if not key:
-           return ''
+            return ''
         return self._categories[key[0]]
 
     def categories(self):
@@ -599,7 +637,7 @@ class ConfigManager(UserDict, object):
         bool -- flag indicating whether parsing should be strict or not
 
         """
-        self.strict = not(not(bool))
+        self.strict = not (not (bool))
 
     def defaults(self):
         """ Return a dictionary of defaults """
@@ -634,7 +672,7 @@ class ConfigManager(UserDict, object):
         """ Return a list of option names for the given section name """
         if self.has_key(section):
             return self[section].keys()
-        else: 
+        else:
             raise NoSectionError(section)
 
     def read(self, filenames):
@@ -705,11 +743,11 @@ class ConfigManager(UserDict, object):
     def __setitem__(self, key, value):
         """ Add a section to the configuration """
         if isinstance(value, ConfigSection):
-           self.data[key] = value
-           self.data[key].setParent(self)
+            self.data[key] = value
+            self.data[key].setParent(self)
         else:
-           self.data[key] = ConfigSection(str(key))
-           self.data[key].setParent(self)
+            self.data[key] = ConfigSection(str(key))
+            self.data[key].setParent(self)
 
     def __getitem__(self, key):
         """
@@ -720,9 +758,9 @@ class ConfigManager(UserDict, object):
 
         """
         if self.data.has_key(key):
-           return self.data[key]
+            return self.data[key]
         if self.data[DEFAULTSECT].has_key(key):
-           return self.data[DEFAULTSECT][key]
+            return self.data[DEFAULTSECT][key]
         raise NoSectionError(key)
 
     def getint(self, section, option):
@@ -744,7 +782,7 @@ class ConfigManager(UserDict, object):
     def has_option(self, section, option):
         """ Check for the existence of a given option in a given section """
         if not section:
-            section=DEFAULTSECT
+            section = DEFAULTSECT
         elif not self.has_key(section):
             return 0
         else:
@@ -760,9 +798,9 @@ class ConfigManager(UserDict, object):
 
     def __repr__(self):
         """ Return an INI formated string with builtins included """
-        return self.to_string(source=COMMANDLINE|CONFIGFILE|CODE|BUILTIN|REGISTRY|ENVIRONMENT)
+        return self.to_string(source=COMMANDLINE | CONFIGFILE | CODE | BUILTIN | REGISTRY | ENVIRONMENT)
 
-    def to_string(self, source=COMMANDLINE|CONFIGFILE):
+    def to_string(self, source=COMMANDLINE | CONFIGFILE):
         """
         Build an INI formatted string based on the ConfigManager contents
 
@@ -773,8 +811,10 @@ class ConfigManager(UserDict, object):
         string -- INI formatted string
 
         """
-        if source & BUILTIN: func = repr
-        else: func = str
+        if source & BUILTIN:
+            func = repr
+        else:
+            func = str
         s = ''
         keys = [x for x in self.keys() if x != DEFAULTSECT]
         keys.sort()
@@ -783,7 +823,7 @@ class ConfigManager(UserDict, object):
         for section in keys:
             content = func(self[section]).strip()
             if content:
-               s += "[%s]\n%s\n\n" % (section, content)
+                s += "[%s]\n%s\n\n" % (section, content)
         return s
 
     def remove_option(self, section, option):
@@ -821,10 +861,10 @@ class ConfigManager(UserDict, object):
         and just about everything else is ignored.
 
         """
-        cursect = None                            # None, or a dictionary
+        cursect = None  # None, or a dictionary
         optname = None
         lineno = 0
-        e = None                                  # None, or an exception
+        e = None  # None, or an exception
         while 1:
             line = fp.readline()
             if not line:
@@ -834,7 +874,7 @@ class ConfigManager(UserDict, object):
             if line.strip() == '' or line[0] in '#;':
                 continue
             if line.split()[0].lower() == 'rem' \
-               and line[0] in "rR":      # no leading whitespace
+                    and line[0] in "rR":  # no leading whitespace
                 continue
             # continuation line?
             if line[0] in ' \t' and cursect is not None and optname:
@@ -866,7 +906,7 @@ class ConfigManager(UserDict, object):
                             # ';' is a comment delimiter only if it follows
                             # a spacing character
                             pos = optval.find(';')
-                            if pos and optval[pos-1] in string.whitespace:
+                            if pos and optval[pos - 1] in string.whitespace:
                                 optval = optval[:pos]
                         optval = optval.strip()
                         # allow empty values
@@ -901,7 +941,7 @@ class ConfigManager(UserDict, object):
         """ Return the option with leading and trailing quotes removed """
         optionstring = self[section][option].strip()
         if (optionstring[0] == '\'' and optionstring[-1] == '\'') or \
-           (optionstring[0] == '\"' and optionstring[-1] == '\"'):
+                (optionstring[0] == '\"' and optionstring[-1] == '\"'):
             optionstring = optionstring[1:-1]
         return optionstring
 
@@ -920,7 +960,7 @@ class ConfigManager(UserDict, object):
         list -- option value split on 'delim' with whitespace trimmed
 
         """
-        optionstring = self.get_opt( section, option )	   
+        optionstring = self.get_opt(section, option)
         return [x.strip() for x in optionstring.split(delim)]
 
     def __add__(self, other):
@@ -934,9 +974,10 @@ class ConfigManager(UserDict, object):
         for key, value in other.items():
             self[key] = value
         try:
-           for key, value in other._categories.items():
-               self._categories[key] = value
-        except AttributeError: pass
+            for key, value in other._categories.items():
+                self._categories[key] = value
+        except AttributeError:
+            pass
         return self
 
     def __iadd__(self, other):
@@ -953,12 +994,13 @@ class ConfigManager(UserDict, object):
         other = other.copy()
         for key, value in other.items():
             if not self.has_key(key):
-                self[key] = value   
+                self[key] = value
         try:
-           for key, values in other._categories.items():
-               if not self._categories.has_key(key):
-                   self._categories[key] = value   
-        except AttributeError: pass
+            for key, values in other._categories.items():
+                if not self._categories.has_key(key):
+                    self._categories[key] = value
+        except AttributeError:
+            pass
         return self
 
     def get_options_from_config(self):
@@ -975,30 +1017,30 @@ class ConfigManager(UserDict, object):
         longopts = []
         shortopts = []
         for section in self.values():
-           for option in section.data.values():
-              for opt in option.getPossibleOptions():
-                 opt = opt.replace('!','')
+            for option in section.data.values():
+                for opt in option.getPossibleOptions():
+                    opt = opt.replace('!', '')
 
-                 # See if the option is a long option
-                 for prefix in long_prefixes:
-                    if prefix is None:
-                       pass
-                    elif not prefix.strip():
-                       pass
-                    elif opt.startswith(prefix):
-                       if option not in longopts:
-                          longopts.append(option)
-                       continue
+                    # See if the option is a long option
+                    for prefix in long_prefixes:
+                        if prefix is None:
+                            pass
+                        elif not prefix.strip():
+                            pass
+                        elif opt.startswith(prefix):
+                            if option not in longopts:
+                                longopts.append(option)
+                            continue
 
-                 # See if the option is a short option
-                 for prefix in short_prefixes:
-                    if prefix is None:
-                       pass
-                    elif not prefix.strip():
-                       pass
-                    elif opt.startswith(prefix):
-                       if option not in shortopts:
-                          shortopts.append(option)
+                    # See if the option is a short option
+                    for prefix in short_prefixes:
+                        if prefix is None:
+                            pass
+                        elif not prefix.strip():
+                            pass
+                        elif opt.startswith(prefix):
+                            if option not in shortopts:
+                                shortopts.append(option)
 
         return shortopts, longopts
 
@@ -1035,29 +1077,30 @@ class ConfigManager(UserDict, object):
 
             # Parse long options
             if [x for x in long_prefixes if args[0].startswith(x)]:
-               try:
-                  opts, args = self.do_longs(opts,args[0],longopts,args[1:])
-               except UnrecognizedArgument, e:
-                  if self.strict: raise
-                  opts, args = self.handle_unrecognized(e[1],opts,args,'long')
-                  if merge: self.unrecognized.append(opts[-1])
+                try:
+                    opts, args = self.do_longs(opts, args[0], longopts, args[1:])
+                except UnrecognizedArgument, e:
+                    if self.strict: raise
+                    opts, args = self.handle_unrecognized(e[1], opts, args, 'long')
+                    if merge: self.unrecognized.append(opts[-1])
 
             # Parse short options
             elif [x for x in short_prefixes if args[0].startswith(x)]:
-               try:
-                  opts, args = self.do_shorts(opts,args[0],shortopts,args[1:])
-               except UnrecognizedArgument, e:
-                  if self.strict: raise
-                  opts, args = self.handle_unrecognized(e[1],opts,args,'short')
-                  if merge: self.unrecognized.append(opts[-1])
+                try:
+                    opts, args = self.do_shorts(opts, args[0], shortopts, args[1:])
+                except UnrecognizedArgument, e:
+                    if self.strict: raise
+                    opts, args = self.handle_unrecognized(e[1], opts, args, 'short')
+                    if merge: self.unrecognized.append(opts[-1])
 
             # No option found.  We're done.
-            else: break
+            else:
+                break
 
         # Merge command line options with configuration
         if merge:
-           self.merge_options(opts)
-           self.check_mandatory_options()
+            self.merge_options(opts)
+            self.check_mandatory_options()
 
         return opts, args
 
@@ -1067,13 +1110,13 @@ class ConfigManager(UserDict, object):
 
         """
         for section in self.values():
-           for option in section.values():
-              if not option.mandatory: continue
-              if option.getValue() in [None,[]]:
-                 names = ', '.join(option.getPossibleOptions())
-                 if not names:
-                    names = option.name
-                 raise MandatoryOption, ('The %s option is mandatory, but was not given' % names, names)
+            for option in section.values():
+                if not option.mandatory: continue
+                if option.getValue() in [None, []]:
+                    names = ', '.join(option.getPossibleOptions())
+                    if not names:
+                        names = option.name
+                    raise MandatoryOption, ('The %s option is mandatory, but was not given' % names, names)
 
     def handle_unrecognized(self, option, opts, args, type='long'):
         """
@@ -1092,35 +1135,37 @@ class ConfigManager(UserDict, object):
         """
         if type == 'long':
 
-           args.pop(0)
+            args.pop(0)
 
-           # Explicitly specified value
-           if option.find('=') + 1:
-              option, value = option.split('=',1)
-              opts.append((option, value))
-              return opts, args
+            # Explicitly specified value
+            if option.find('=') + 1:
+                option, value = option.split('=', 1)
+                opts.append((option, value))
+                return opts, args
 
-           # Implicitly specified value
-           if self.has_following_argument(args):
-              opts.append((option, args.pop(0)))
-              return opts, args
+            # Implicitly specified value
+            if self.has_following_argument(args):
+                opts.append((option, args.pop(0)))
+                return opts, args
 
-           # No argument found
-           opts.append((option, None))
-           return opts, args
+            # No argument found
+            opts.append((option, None))
+            return opts, args
 
         elif type == 'short':
 
-           short_prefixes, long_prefixes = self.get_prefixes()
-           prefix = [x for x in short_prefixes if option.startswith(x)][0]
+            short_prefixes, long_prefixes = self.get_prefixes()
+            prefix = [x for x in short_prefixes if option.startswith(x)][0]
 
-           start, end = args[0].split(option.replace(prefix,'',1),1)
-           if end: args[0] = prefix + end
-           else: args.pop(0)
+            start, end = args[0].split(option.replace(prefix, '', 1), 1)
+            if end:
+                args[0] = prefix + end
+            else:
+                args.pop(0)
 
-           opts.append((option, ''))
-           return opts, args
-        
+            opts.append((option, ''))
+            return opts, args
+
         raise ValueError, 'Expecting type of "short" or "long".'
 
     def merge_options(self, options):
@@ -1133,9 +1178,9 @@ class ConfigManager(UserDict, object):
         # consecutive options will append.
         for option, value in options:
 
-#           opts = self.getPossibleOptions()
-#           negative = [x.replace('!','',1) for x in opts if x.startswith('!')]
-#           positive = [x for x in opts if not x.startswith('!')]
+            #           opts = self.getPossibleOptions()
+            #           negative = [x.replace('!','',1) for x in opts if x.startswith('!')]
+            #           positive = [x for x in opts if not x.startswith('!')]
 
             if isinstance(option, GenericOption):
                 option.source = COMMANDLINE
@@ -1161,10 +1206,10 @@ class ConfigManager(UserDict, object):
         long_prefixes = cls.long_prefix
         short_prefixes = cls.short_prefix
         if type(long_prefixes) not in [list, tuple]:
-           long_prefixes = [long_prefixes]
+            long_prefixes = [long_prefixes]
         if type(short_prefixes) not in [list, tuple]:
-           short_prefixes = [short_prefixes]
-        return [x for x in short_prefixes if x],[x for x in long_prefixes if x]
+            short_prefixes = [short_prefixes]
+        return [x for x in short_prefixes if x], [x for x in long_prefixes if x]
 
     get_prefixes = classmethod(get_prefixes)
 
@@ -1196,40 +1241,40 @@ class ConfigManager(UserDict, object):
         option.file = None
 
         # If we have an argument, but the option doesn't accept one, bail out.
-        if forcedarg and not(option.acceptsArgument()):
+        if forcedarg and not (option.acceptsArgument()):
             raise UnspecifiedArgument('option %s must not have an argument' \
-                                       % opt, opt)
+                                      % opt, opt)
 
         elif forcedarg:
-           optarg, args = option.getArgument(args, forcedarg=True)
+            optarg, args = option.getArgument(args, forcedarg=True)
 
-        elif not(option.acceptsArgument()):
-           pass
+        elif not (option.acceptsArgument()):
+            pass
 
         # Parse the following arguments
         else:
 
-           # See if we have a possible following argument
-           if not type(self).has_following_argument(args):
+            # See if we have a possible following argument
+            if not type(self).has_following_argument(args):
 
-              # No argument found, but we require one.
-              if option.requiresArgument():
-                 raise RequiresArgument('option %s requires argument' \
-                                         % opt, opt)
+                # No argument found, but we require one.
+                if option.requiresArgument():
+                    raise RequiresArgument('option %s requires argument' \
+                                           % opt, opt)
 
-           # Parse the argument
-           optarg, args = option.getArgument(args)
+            # Parse the argument
+            optarg, args = option.getArgument(args)
 
         # Convert boolean options to proper value
         if not forcedarg and isinstance(option, BooleanOption):
-           options = option.getPossibleOptions()
-           negative = [x.replace('!','',1) for x in options
-                                           if x.startswith('!')]
-#          positive = [x for x in options if not x.startswith('!')]
-           if opt in negative:
-              optarg = 0
-           else:
-              optarg = 1
+            options = option.getPossibleOptions()
+            negative = [x.replace('!', '', 1) for x in options
+                        if x.startswith('!')]
+            #          positive = [x for x in options if not x.startswith('!')]
+            if opt in negative:
+                optarg = 0
+            else:
+                optarg = 1
 
         opts.append((option, optarg))
         return opts, args
@@ -1248,14 +1293,14 @@ class ConfigManager(UserDict, object):
         short_prefixes, long_prefixes = cls.get_prefixes()
 
         # No arguments at all
-        if not(args):
-           return 0
+        if not (args):
+            return 0
 
         # The next argument has an option prefix and it doesn't consist
         # entirely of a prefix.
-        if [x for x in long_prefixes+short_prefixes if args[0].startswith(x)] \
-           and args[0] not in long_prefixes+short_prefixes:
-           return 0
+        if [x for x in long_prefixes + short_prefixes if args[0].startswith(x)] \
+                and args[0] not in long_prefixes + short_prefixes:
+            return 0
 
         # All other cases fail.  This must be an argument.
         return 1
@@ -1276,9 +1321,9 @@ class ConfigManager(UserDict, object):
         """
         possibilities = []
         for o in longopts:
-           match = o.matches(opt)
-           if match:
-              possibilities.append((match, o))
+            match = o.matches(opt)
+            if match:
+                possibilities.append((match, o))
 
         if not possibilities:
             raise UnrecognizedArgument('option %s not recognized' % opt, opt)
@@ -1320,7 +1365,7 @@ class ConfigManager(UserDict, object):
         optstring.strip()
 
         if not optstring:
-           return [], args 
+            return [], args
 
         prefix = optstring[0]
         optstring = optstring[1:]
@@ -1328,8 +1373,8 @@ class ConfigManager(UserDict, object):
         while optstring != '':
             opt, optstring = optstring[0], optstring[1:]
 
-            option = self.get_match(prefix+opt, shortopts)
-            option.actual = prefix+opt
+            option = self.get_match(prefix + opt, shortopts)
+            option.actual = prefix + opt
             option.file = None
 
             # See if we need to check for an argument
@@ -1337,39 +1382,39 @@ class ConfigManager(UserDict, object):
 
                 if optstring == '':
 
-                   # Are there any following arguments?
-                   if not type(self).has_following_argument(args):
+                    # Are there any following arguments?
+                    if not type(self).has_following_argument(args):
 
-                      # No argument found, but we require one.
-                      if option.requiresArgument():
-                         raise RequiresArgument('option %s requires argument' \
-                                                 % opt, opt)
+                        # No argument found, but we require one.
+                        if option.requiresArgument():
+                            raise RequiresArgument('option %s requires argument' \
+                                                   % opt, opt)
 
-                   optarg, args = option.getArgument(args)
+                    optarg, args = option.getArgument(args)
 
                 else:
-                   optarg, args = option.getArgument([optstring]+args)
+                    optarg, args = option.getArgument([optstring] + args)
 
                 # No argument was found
                 if args and args[0] == optstring:
-                   optarg = None
-                   optstring = args.pop(0)
+                    optarg = None
+                    optstring = args.pop(0)
                 else:
-                   optstring = ''
+                    optstring = ''
 
             else:
                 optarg = None
 
             # Convert boolean options to proper value
             if optarg is None and isinstance(option, BooleanOption):
-               options = option.getPossibleOptions()
-               negative = [x.replace('!','',1) for x in options
-                                               if x.startswith('!')]
-#              positive = [x for x in options if not x.startswith('!')]
-               if prefix+opt in negative:
-                  optarg = 0
-               else:
-                  optarg = 1
+                options = option.getPossibleOptions()
+                negative = [x.replace('!', '', 1) for x in options
+                            if x.startswith('!')]
+                #              positive = [x for x in options if not x.startswith('!')]
+                if prefix + opt in negative:
+                    optarg = 0
+                else:
+                    optarg = 1
 
             opts.append((option, optarg))
 
@@ -1386,54 +1431,56 @@ class ConfigManager(UserDict, object):
         """
         display = []
         for sectkey, section in self.items():
-           for optkey, option in section.items():
-              if option.long in options or option.short in options:
-                 display.append((sectkey, optkey, option))
+            for optkey, option in section.items():
+                if option.long in options or option.short in options:
+                    display.append((sectkey, optkey, option))
 
         display.reverse()
 
         err = sys.stderr.write
 
         while display:
-           sectkey, optkey, opt = display.pop()
-           err('Command Line: %s\n' % self._option_usage(opt))
-           err('Configuration File: [%s] %s=\n' % (sectkey, optkey))
+            sectkey, optkey, opt = display.pop()
+            err('Command Line: %s\n' % self._option_usage(opt))
+            err('Configuration File: [%s] %s=\n' % (sectkey, optkey))
 
-           current = opt.names()['current']
-           if current != None: err('Current Value: %s\n\n' % current)
-           else: err('\n')
+            current = opt.names()['current']
+            if current != None:
+                err('Current Value: %s\n\n' % current)
+            else:
+                err('\n')
 
-           err('%s\n\n' % opt.description)
-           if display: err('\n')
+            err('%s\n\n' % opt.description)
+            if display: err('\n')
 
         sys.exit(1)
 
     def _option_usage(self, option):
         """ Return the option the way it can be typed at the command line """
         if option.options.strip():
-           short_prefixes, long_prefixes = self.get_prefixes()
-           prefixes = long_prefixes + short_prefixes
-           options = re.sub(r'\s+', r' ', option.options.replace('!',''))
-           options = options.split()
-           options = [(len(x),x) for x in options
+            short_prefixes, long_prefixes = self.get_prefixes()
+            prefixes = long_prefixes + short_prefixes
+            options = re.sub(r'\s+', r' ', option.options.replace('!', ''))
+            options = options.split()
+            options = [(len(x), x) for x in options
                        if [x for p in prefixes if x.startswith(p)]]
-           options.sort()
-           options = [x[1] for x in options]
+            options.sort()
+            options = [x[1] for x in options]
 
-           # Determine argument separator
-           sep = ' '
-           loptions = [x for x in options
-                         if [x for p in long_prefixes if x.startswith(p)]]
-           if loptions:
-              sep = '='
+            # Determine argument separator
+            sep = ' '
+            loptions = [x for x in options
+                        if [x for p in long_prefixes if x.startswith(p)]]
+            if loptions:
+                sep = '='
 
-           options = ', '.join(options)
-           if option.acceptsArgument() and option.requiresArgument():
-              return '%s%s%s' % (options, sep, option.synopsis)
-           elif option.acceptsArgument():
-              return '%s[%s%s]' % (options, sep, option.synopsis)
-           else:
-              return options
+            options = ', '.join(options)
+            if option.acceptsArgument() and option.requiresArgument():
+                return '%s%s%s' % (options, sep, option.synopsis)
+            elif option.acceptsArgument():
+                return '%s[%s%s]' % (options, sep, option.synopsis)
+            else:
+                return options
         return ''
 
     def usage(self, categories=[]):
@@ -1450,7 +1497,7 @@ class ConfigManager(UserDict, object):
 
         name_len = 0
         summary_len = 0
- 
+
         # Put options into categories
         categorized = {}
         for option in options:
@@ -1460,129 +1507,128 @@ class ConfigManager(UserDict, object):
 
             summary = ''
             if option.summary:
-               summary = option.summary % option.names()
-               default = option.defaultValue()
-               if default is not None:
-                   summary += ' [%s]' % default
+                summary = option.summary % option.names()
+                default = option.defaultValue()
+                if default is not None:
+                    summary += ' [%s]' % default
 
             if not categorized.has_key(catname):
-               categorized[catname] = []
-            categorized[catname].append((name,summary,option))
+                categorized[catname] = []
+            categorized[catname].append((name, summary, option))
 
             if summary:
-               name_len = max(name_len,len(name))
-               summary_len = max(summary_len,len(summary))
+                name_len = max(name_len, len(name))
+                summary_len = max(summary_len, len(summary))
 
-        name_len = min(name_len, int(TERMINAL_WIDTH*MAX_NAME_WIDTH_RATIO))
+        name_len = min(name_len, int(TERMINAL_WIDTH * MAX_NAME_WIDTH_RATIO))
         summary_len = TERMINAL_WIDTH - PREPAD - GUTTER - name_len
 
         # Build the output string
         s = ''
         if categories:
-           categories = [self.get_category(x) for x in categories]
+            categories = [self.get_category(x) for x in categories]
         else:
-           categories = categorized.keys()
-           categories.sort()
+            categories = categorized.keys()
+            categories.sort()
         for category in categories:
-           options = categorized[category]
-           if not category:
-              if len(categories) > 1:
-                 category = 'General Options'
-              else:
-                 category = 'Options'
-           s += '\n%s:\n' % category
-           for name, summary, option in options:
-              length = len(name)
-              summary = wrap(summary, summary_len)
-              summary = ('\n%s' % (' '*(PREPAD+name_len+GUTTER))).join(summary)
-              # Be lenient on the gutter if we are really close to
-              # fitting in the allocated space
-              format = '%s%s%s%s\n'
-              colspace = max(GUTTER + name_len - length, GUTTER)
-              if summary and ((name_len + GUTTER) > length):
-                 colspace = (name_len + GUTTER) - length
-              elif summary and length > name_len:
-                 colspace = PREPAD + name_len + GUTTER
-                 format = '%s%s\n%s%s\n'
-              s += format % (' '*PREPAD, name, ' '*colspace, summary)
+            options = categorized[category]
+            if not category:
+                if len(categories) > 1:
+                    category = 'General Options'
+                else:
+                    category = 'Options'
+            s += '\n%s:\n' % category
+            for name, summary, option in options:
+                length = len(name)
+                summary = wrap(summary, summary_len)
+                summary = ('\n%s' % (' ' * (PREPAD + name_len + GUTTER))).join(summary)
+                # Be lenient on the gutter if we are really close to
+                # fitting in the allocated space
+                format = '%s%s%s%s\n'
+                colspace = max(GUTTER + name_len - length, GUTTER)
+                if summary and ((name_len + GUTTER) > length):
+                    colspace = (name_len + GUTTER) - length
+                elif summary and length > name_len:
+                    colspace = PREPAD + name_len + GUTTER
+                    format = '%s%s\n%s%s\n'
+                s += format % (' ' * PREPAD, name, ' ' * colspace, summary)
         return s
- 
+
 
 class CommandLineManager(ordereddict):
-   """ Command-Line Argument Manager """
+    """ Command-Line Argument Manager """
 
-   def __init__(self, data={}):
-      ordereddict.__init__(self, data)
-      self._associations = {}
+    def __init__(self, data={}):
+        ordereddict.__init__(self, data)
+        self._associations = {}
 
-   def usage(self):
-      s = ''
-      for item in self.values():
-         if isinstance(item, ConfigManager):
-            s += item.usage()
-         else:
-            break
-      return s
+    def usage(self):
+        s = ''
+        for item in self.values():
+            if isinstance(item, ConfigManager):
+                s += item.usage()
+            else:
+                break
+        return s
 
-   def requiresArgument(self):
-      """ Return boolean indicating if config requires an argument """
-      if not self: return 0
-      for key in self:
-         item = ordereddict.__getitem__(self, key)
-         if isinstance(item, GenericArgument):
-             if item.mandatory:
-                 return 1
+    def requiresArgument(self):
+        """ Return boolean indicating if config requires an argument """
+        if not self: return 0
+        for key in self:
+            item = ordereddict.__getitem__(self, key)
+            if isinstance(item, GenericArgument):
+                if item.mandatory:
+                    return 1
 
-   def getopt(self, args=None):
-      if args == None:
-         args = sys.argv[1:]
-      else:
-         args = args[:]
+    def getopt(self, args=None):
+        if args == None:
+            args = sys.argv[1:]
+        else:
+            args = args[:]
 
-      if not self: return self
+        if not self: return self
 
-      for key in self:
-         item = ordereddict.__getitem__(self, key)
-         association = self._associations.get(key, None)
-         if isinstance(item, ConfigManager):
-            if association:
-               item.read(association)
-            options, args = item.getopt(args)
-         elif isinstance(item, GenericArgument):
-            value, args = item.getArgument(args)
-            item.setValue(value)
-         else:
-            raise ValueError, "Unrecognized argument type."
+        for key in self:
+            item = ordereddict.__getitem__(self, key)
+            association = self._associations.get(key, None)
+            if isinstance(item, ConfigManager):
+                if association:
+                    item.read(association)
+                options, args = item.getopt(args)
+            elif isinstance(item, GenericArgument):
+                value, args = item.getArgument(args)
+                item.setValue(value)
+            else:
+                raise ValueError, "Unrecognized argument type."
 
-      if len(args):
-         raise TooManyValues, \
-               'Too many command-line arguments: %s' % ' '.join(args)
+        if len(args):
+            raise TooManyValues, \
+                'Too many command-line arguments: %s' % ' '.join(args)
 
-      return self
+        return self
 
-   def __setitem__(self, key, value):
-      item = value
-      if type(value) in [types.TupleType, types.ListType]:
-         value = list(value)
-         item = value.pop(0)
-         self._associations[key] = value
-      assert isinstance(item, ConfigManager) or \
-             isinstance(item, GenericArgument), \
-             'Command-line parameters must be ConfigManagers or ' + \
-             'subclasses of GenericArgument'
-      if hasattr(item, 'name') and item.name is None:
-         item.name = key
-      ordereddict.__setitem__(self, key, item)
+    def __setitem__(self, key, value):
+        item = value
+        if type(value) in [types.TupleType, types.ListType]:
+            value = list(value)
+            item = value.pop(0)
+            self._associations[key] = value
+        assert isinstance(item, ConfigManager) or \
+               isinstance(item, GenericArgument), \
+            'Command-line parameters must be ConfigManagers or ' + \
+            'subclasses of GenericArgument'
+        if hasattr(item, 'name') and item.name is None:
+            item.name = key
+        ordereddict.__setitem__(self, key, item)
 
-   def __getitem__(self, key):
-      if type(key) == types.SliceType:
-         return self.__getslice__(key.start, key.stop)
-      item = ordereddict.__getitem__(self, key)
-      if isinstance(item, ConfigManager):
-         return item
-      else:
-         return item.getValue()
-
+    def __getitem__(self, key):
+        if type(key) == types.SliceType:
+            return self.__getslice__(key.start, key.stop)
+        item = ordereddict.__getitem__(self, key)
+        if isinstance(item, ConfigManager):
+            return item
+        else:
+            return item.getValue()
 
 
 # These must be loaded last because they depend on variables
@@ -1600,8 +1646,6 @@ from Files import OutputFileArgument, InputFileArgument
 from Directories import OutputDirectoryArgument, InputDirectoryArgument
 from Counted import CountedOption, CountedArgument
 
-
-
 if __name__ == '__main__':
 
     # Instantiate a new option parser
@@ -1613,60 +1657,60 @@ if __name__ == '__main__':
     ConfigManager.short_prefix = '-'
     ConfigManager.long_prefix = '--'
 
-    debugging = op.add_category('debugging','Debugging')
+    debugging = op.add_category('debugging', 'Debugging')
 
     # Create a new section
     logging = op.add_section('logging')
 
     logging['compare'] = MultiOption(
-       options = '--compare',
-       range = [0,2],
-       delim = ',',
-       environ = 'COMPARE',
-#      mandatory = 1,
-       template = FloatOption, 
+        options='--compare',
+        range=[0, 2],
+        delim=',',
+        environ='COMPARE',
+        #      mandatory = 1,
+        template=FloatOption,
     )
 
     logging['testopts'] = CompoundOption(
-       options = '--testopts',
-       environ = 'TESTOPTS',
+        options='--testopts',
+        environ='TESTOPTS',
     )
 
     logging['verbose'] = BooleanOption(
-       options = '--verbose -v !-q !--quiet',
-       environ = 'VERBOSE',
-       default = 0,
-       category = 'debugging',
+        options='--verbose -v !-q !--quiet',
+        environ='VERBOSE',
+        default=0,
+        category='debugging',
     )
 
     # Explicitly specify an integer option
     logging['debug'] = CountedOption(
-       '''
-       Set the debugging level
+        '''
+        Set the debugging level
 
-       This option sets the verbosity of debugging messages.
+        This option sets the verbosity of debugging messages.
 
-       ''',
-       options = '--debug -d !-u',
-       default = 0,
-       environ = 'DEBUG',
-       category = 'debugging',
+        ''',
+        options='--debug -d !-u',
+        default=0,
+        environ='DEBUG',
+        category='debugging',
     )
 
     # Explicitly specify another integer option
     logging['warning'] = IntegerOption(
-       '''
-       Set the warning level
+        '''
+        Set the warning level
 
-       This option sets the verbosity of warning messages.
+        This option sets the verbosity of warning messages.
 
-       Valid Values:
-       The warning level must be an integer between 0 and 10.
+        Valid Values:
+        The warning level must be an integer between 0 and 10.
 
-       ''',
-       options = '--warning -w',
-       values = [0,10],
-       default = 1
+        ''',
+        options='--warning -w',
+        values=[0, 10],
+        default=1
     )
 
     # Implicitly declare a float option
@@ -1678,28 +1722,28 @@ if __name__ == '__main__':
     files = op.add_section('files')
 
     files['output-file'] = OutputFileOption(
-       ''' Where the results will go. This is the output file that will contain your output ''',
-       options = '--output-file -o',
-       synopsis = 'OUTPUT-FILENAME',
+        ''' Where the results will go. This is the output file that will contain your output ''',
+        options='--output-file -o',
+        synopsis='OUTPUT-FILENAME',
     )
 
     files['input-file'] = InputFileOption(
-       ''' Where the input will come from ''',
-       options = '--input-file -i',
+        ''' Where the input will come from ''',
+        options='--input-file -i',
     )
 
     files['input-dir'] = InputDirectoryOption(
-       ''' Where the input will come from ''',
-       options = '--input-dir -I',
+        ''' Where the input will come from ''',
+        options='--input-dir -I',
     )
 
     files['output-dir'] = OutputDirectoryOption(
-       ''' Where the output will come from.  This must be a directory or it won\'t work ''',
-       options = '--output-dir -D',
+        ''' Where the output will come from.  This must be a directory or it won\'t work ''',
+        options='--output-dir -D',
     )
 
     # Read in configuration files
-    #op.read('/home/username/.myconfrc')
+    # op.read('/home/username/.myconfrc')
     op.read('./testconfig')
 
     # Call the option parser to parse the command line
@@ -1709,11 +1753,11 @@ if __name__ == '__main__':
     print
     print '-- Parsed Options --'
     print
-#   print opts
-#   print args
+    #   print opts
+    #   print args
 
-#   print op['logging']['debug'], op.data['logging'].data['debug'].file
-#   print op['logging']['compare'], op.data['logging'].data['compare'].file
+    #   print op['logging']['debug'], op.data['logging'].data['debug'].file
+    #   print op['logging']['compare'], op.data['logging'].data['compare'].file
     for option, value in opts:
         # Option was recognized
         if isinstance(option, GenericOption):
@@ -1736,31 +1780,31 @@ if __name__ == '__main__':
     print
 
     sources = \
-    [('Command-Line Options', COMMANDLINE),
-     ('Config File Options', CONFIGFILE),
-     ('Environment Options', ENVIRONMENT),
-     ('Builtin Options', BUILTIN)]
+        [('Command-Line Options', COMMANDLINE),
+         ('Config File Options', CONFIGFILE),
+         ('Environment Options', ENVIRONMENT),
+         ('Builtin Options', BUILTIN)]
 
     for title, bit in sources:
-       print '-- %s --' % title
-       print
-       for section in op.values():
-          for option in section.values():
-             if option.source & bit:
-                print '%s.%s: %s' % (section.name, option.name, option.getValue())
-       print
+        print '-- %s --' % title
+        print
+        for section in op.values():
+            for option in section.values():
+                if option.source & bit:
+                    print '%s.%s: %s' % (section.name, option.name, option.getValue())
+        print
 
     # Print out a usage message
     print '-- Usage --'
     print
     print op.usage()
-    print 
+    print
 
     # Print out a usage message for one category
     print '-- Single Category Usage --'
     print
     print op.usage(['debugging'])
-    print 
+    print
 
     # Print out an INI representation of the current settings
     print '-- Current Configuration --'
@@ -1769,9 +1813,9 @@ if __name__ == '__main__':
 
     print '-- Command-Line Manager --'
     print
-    outputfile = StringArgument("Output File", name='foo', values=('add','subtract','multiply','divide'))
+    outputfile = StringArgument("Output File", name='foo', values=('add', 'subtract', 'multiply', 'divide'))
     number = IntegerArgument("Number of times to iterate", name='bar')
     clm = CommandLineManager(op, outputfile, number)
     print clm()
     for item in clm:
-       print '%s: %s' % (type(item), item)
+        print '%s: %s' % (type(item), item)

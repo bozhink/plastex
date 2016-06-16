@@ -1,16 +1,17 @@
 #!/usr/bin/env python
 
-import unittest, re
+import re
+import unittest
 from unittest import TestCase
+
 from plasTeX.TeX import TeX
-from plasTeX import Macro
+
 
 def normalize(s):
     return re.sub(r'\s+', r' ', s).strip()
 
 
 class Source(TestCase):
-
     def testList(self):
         input = r'\begin{enumerate} \item one \item two \item three \end{enumerate}'
         s = TeX()
@@ -39,7 +40,7 @@ class Source(TestCase):
         output = s.parse()
         source = normalize(output.source)
         assert input == source, '"%s" != "%s"' % (input, source)
-    
+
         # \begin{displaymath} ... \end{displaymath} is transformed
         # into \[ ...\] 
         input2 = r'a \begin{displaymath} x^{y_3} \end{displaymath}b'
@@ -56,7 +57,7 @@ class Source(TestCase):
         output = s.parse()
         source = normalize(output.source)
         assert input == source, '"%s" != "%s"' % (input, source)
-     
+
         input = r'\subsection{Heading 2} bar two'
         item = output[0].lastChild
         source = normalize(item.source)
@@ -69,9 +70,7 @@ class Source(TestCase):
         output = s.parse()
         source = normalize(output.source)
         assert input == source, '"%s" != "%s"' % (input, source)
-        
-    
+
 
 if __name__ == '__main__':
     unittest.main()
-

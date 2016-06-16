@@ -3,6 +3,7 @@
 import locale
 import string
 
+
 def stringletters():
     encoding = locale.getlocale()[1]
     if encoding:

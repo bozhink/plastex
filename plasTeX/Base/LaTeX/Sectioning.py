@@ -5,10 +5,11 @@ C.4 Sectioning and Table of Contents (p174)
 
 """
 
-from plasTeX import Command, Environment, TeXFragment
+from plasTeX import Command
 from plasTeX.Logging import getLogger
 
 log = getLogger()
+
 
 #
 # C.4.1 Sectioning Commands
@@ -16,12 +17,14 @@ log = getLogger()
 
 class cachedproperty(object):
     """ Property whose value is only calculated once and cached """
+
     def __init__(self, func):
         self._func = func
+
     def __get__(self, obj, type=None):
         if obj is None:
             return self
-        try: 
+        try:
             return getattr(obj, '@%s' % self._func.func_name)
         except AttributeError:
             result = self._func(obj)
@@ -68,21 +71,22 @@ class TableOfContents(object):
             return object.__getattribute__(self, name)
 
         # Limit the number of ToC levels
-        if name in ['tableofcontents','fulltableofcontents']:
+        if name in ['tableofcontents', 'fulltableofcontents']:
             if self._toc_level < self._toc_limit:
-                return [type(self)(x._toc_node, self._toc_limit, 
-                        self._toc_level+1) for x in self._toc_node.fulltableofcontents]
+                return [type(self)(x._toc_node, self._toc_limit,
+                                   self._toc_level + 1) for x in self._toc_node.fulltableofcontents]
             else:
                 return []
 
         # All other attribute accesses get passed on
         return getattr(self._toc_node, name)
 
+
 class SectionUtils(object):
     """ General utilities for getting information about sections """
 
     tocdepth = None
-    
+
     @cachedproperty
     def footnotes(self):
         output = []
@@ -93,9 +97,9 @@ class SectionUtils(object):
             if s is self:
                 output.append(f)
         for i, f in enumerate(output):
-            f.mark.attributes['num'] = i+1
+            f.mark.attributes['num'] = i + 1
         return output
-        
+
     @cachedproperty
     def subsections(self):
         """ Retrieve a list of all immediate subsections of this section """
@@ -129,8 +133,8 @@ class SectionUtils(object):
             return [TableOfContents(x, tocdepth) for x in self.subsections]
 
         # Only include sections that create files in the ToC
-        return [TableOfContents(x, tocdepth) for x in self.subsections 
-                                             if x.filename]
+        return [TableOfContents(x, tocdepth) for x in self.subsections
+                if x.filename]
 
     @cachedproperty
     def fulltableofcontents(self):
@@ -140,8 +144,8 @@ class SectionUtils(object):
             return [TableOfContents(x, 1000) for x in self.subsections]
 
         # Only include sections that create files in the ToC
-        return [TableOfContents(x, 1000) for x in self.subsections 
-                                             if x.filename]
+        return [TableOfContents(x, 1000) for x in self.subsections
+                if x.filename]
 
     @cachedproperty
     def allSections(self):
@@ -189,7 +193,7 @@ class SectionUtils(object):
         for item in sections:
             if item is self:
                 breaknext = True
-                continue     
+                continue
             if breaknext:
                 next = item
                 break
@@ -267,7 +271,7 @@ class SectionUtils(object):
             for key in self.config['links'].keys():
                 if '-' not in key:
                     continue
-                newkey, type = key.strip().split('-',1)
+                newkey, type = key.strip().split('-', 1)
                 if newkey not in links:
                     links[newkey] = {}
                 links[newkey][type] = self.config['links'][key]
@@ -281,20 +285,20 @@ class SectionUtils(object):
 
     def digest(self, tokens):
         # Absorb the tokens that belong to us
-#       text = []
+        #       text = []
         for item in tokens:
-#           if item.nodeType == Command.TEXT_NODE:
-#               text.append(item)
-#               continue
+            #           if item.nodeType == Command.TEXT_NODE:
+            #               text.append(item)
+            #               continue
             if item.level <= self.level:
                 tokens.push(item)
                 break
             if item.nodeType == Command.ELEMENT_NODE:
                 item.parentNode = self
                 item.digest(tokens)
-#           self.appendText(text, self.ownerDocument.charsubs)
+            # self.appendText(text, self.ownerDocument.charsubs)
             self.appendChild(item)
-#       self.appendText(text, self.ownerDocument.charsubs)
+        # self.appendText(text, self.ownerDocument.charsubs)
         self.paragraphs()
 
 
@@ -302,37 +306,46 @@ class StartSection(SectionUtils, Command):
     blockType = True
     args = '* [ toc ] title'
 
+
 class part(StartSection):
     level = Command.PART_LEVEL
     counter = 'part'
+
 
 class chapter(StartSection):
     level = Command.CHAPTER_LEVEL
     counter = 'chapter'
 
+
 class section(StartSection):
     level = Command.SECTION_LEVEL
     counter = 'section'
+
 
 class subsection(StartSection):
     level = Command.SUBSECTION_LEVEL
     counter = 'subsection'
 
+
 class subsubsection(StartSection):
     level = Command.SUBSUBSECTION_LEVEL
     counter = 'subsubsection'
+
 
 class paragraph(StartSection):
     level = Command.PARAGRAPH_LEVEL
     counter = 'paragraph'
 
+
 class subparagraph(StartSection):
     level = Command.SUBPARAGRAPH_LEVEL
     counter = 'subparagraph'
 
+
 class subsubparagraph(StartSection):
     level = Command.SUBSUBPARAGRAPH_LEVEL
     counter = 'subsubparagraph'
+
 
 #
 # C.4.2 The Appendix
@@ -342,6 +355,7 @@ class appendix(Command):
     """ This needs to be implemented in the cls file """
     blockType = True
 
+
 #
 # C.4.3 Table of Contents
 #
@@ -349,14 +363,18 @@ class appendix(Command):
 class tableofcontents(Command):
     blockType = True
 
+
 class listoffigures(Command):
     blockType = True
+
 
 class listoftables(Command):
     blockType = True
 
+
 class addcontentsline(Command):
     args = 'file:str level:str text'
+
 
 class addtocontents(Command):
     args = 'file:str text'
@@ -364,4 +382,3 @@ class addtocontents(Command):
 #
 # C.4.4 Style Parameters
 #
-

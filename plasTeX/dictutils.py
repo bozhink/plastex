@@ -2,6 +2,7 @@
 
 from types import SliceType as _SliceType
 
+
 class ordereddict(dict):
     """ 
     Dictionary where key/value pairs are kept in the original order
@@ -33,7 +34,7 @@ class ordereddict(dict):
 
     def items(self):
         if not hasattr(self, '_keys'): self._keys = []
-        return [(x,self[x]) for x in self._keys] 
+        return [(x, self[x]) for x in self._keys]
 
     def keys(self):
         if not hasattr(self, '_keys'): self._keys = []
@@ -41,7 +42,7 @@ class ordereddict(dict):
 
     def values(self):
         if not hasattr(self, '_keys'): self._keys = []
-        return [self[x] for x in self._keys] 
+        return [self[x] for x in self._keys]
 
     def __setitem__(self, key, value):
         if not hasattr(self, '_keys'): self._keys = []
@@ -66,25 +67,25 @@ class ordereddict(dict):
     def __getslice__(self, start, stop):
         keys = self.keys()
         if start is None:
-           start = 0
+            start = 0
         else:
-           start = max(0,keys.index(start)-1)
+            start = max(0, keys.index(start) - 1)
         if stop is None:
-           stop = len(keys)
+            stop = len(keys)
         else:
-           stop = keys.index(stop)
+            stop = keys.index(stop)
         return [self[x] for x in keys[start:stop]]
 
     def __delslice__(self, start, stop):
         keys = self.keys()
         if start is None:
-           start = 0
+            start = 0
         else:
-           start = keys.index(start)
+            start = keys.index(start)
         if stop is None:
-           stop = len(keys)
+            stop = len(keys)
         else:
-           stop = keys.index(stop)
+            stop = keys.index(stop)
         for x in keys[start:stop]:
             dict.__delitem__(self, x)
 

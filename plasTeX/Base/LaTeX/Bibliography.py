@@ -5,12 +5,15 @@ C.11.3 Bibliography and Citation (p208)
 
 """
 
-import plasTeX, codecs
-from plasTeX.Base.LaTeX.Sectioning import chapter, section
-from plasTeX import Command, Environment
+import codecs
+
+import plasTeX
 from Lists import List
+from plasTeX import Command
+from plasTeX.Base.LaTeX.Sectioning import chapter
 
 log = plasTeX.Logging.getLogger()
+
 
 class bibliography(chapter):
     args = 'files:str'
@@ -25,18 +28,20 @@ class bibliography(chapter):
     def loadBibliographyFile(self, tex):
         # Load bibtex file
         try:
-            file = tex.kpsewhich(tex.jobname+'.bbl')
+            file = tex.kpsewhich(tex.jobname + '.bbl')
             tex.input(codecs.open(file, 'r', self.ownerDocument.config['files']['input-encoding']))
         except OSError, msg:
             log.warning(msg)
 
+
 class bibliographystyle(Command):
     args = 'style'
-    
+
+
 class thebibliography(List):
     args = 'widelabel'
     linkType = 'bibliography'
-  
+
     class bibitem(List.item):
         args = '[ label ] key:str'
 
@@ -48,8 +53,8 @@ class thebibliography(List):
             bibitems = doc.userdata.getPath('bibliography/bibitems', {})
             bibitems[a['key']] = self
             doc.userdata.setPath('bibliography/bibitems', bibitems)
-            self.ref = str(len([x for x in bibitems.values() 
-                                  if not x.attributes['label']]))
+            self.ref = str(len([x for x in bibitems.values()
+                                if not x.attributes['label']]))
             key = a['key']
             label = a.get('label')
             bibcites = doc.userdata.getPath('bibliography/bibcites', {})
@@ -82,6 +87,7 @@ class thebibliography(List):
             tokens.push(tok)
             break
         return List.digest(self, tokens)
+
 
 class cite(Command):
     args = '[ text ] bibkeys:list:str'
@@ -116,7 +122,7 @@ class cite(Command):
             node.extend(item.bibcite)
             node.idref['bibitem'] = item
             res.append(node)
-            if i < (len(self.bibitems)-1):
+            if i < (len(self.bibitems) - 1):
                 res.append(', ')
             else:
                 if self.postnote:
@@ -125,8 +131,10 @@ class cite(Command):
                 res.append(']')
         return res
 
+
 class nocite(Command):
     args = 'bibkeys:str'
+
 
 class bibcite(Command):
     args = 'key:str info'
@@ -139,17 +147,22 @@ class bibcite(Command):
         bibcites[self.attributes['key']] = value
         doc.userdata.setPath('bibliography/bibcites', bibcites)
 
+
 class citation(Command):
     pass
+
 
 class bibstyle(Command):
     pass
 
+
 class bibdata(Command):
     pass
 
+
 class newblock(Command):
     pass
-    
+
+
 class bibliographyref(Command):
     pass

@@ -2,17 +2,18 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.DOM import *
 
-class NodeTest(TestCase):
 
+class NodeTest(TestCase):
     def _checkPositions(self, node):
-        """ Check the postions of all contained nodes """ 
+        """ Check the postions of all contained nodes """
         if isinstance(node, CharacterData):
             return
-            
-        if not(isinstance(node, Node)):
-            return 
+
+        if not (isinstance(node, Node)):
+            return
 
         maxidx = len(node) - 1
 
@@ -25,50 +26,50 @@ class NodeTest(TestCase):
         for i, item in enumerate(node):
             if i == maxidx:
                 assert item.nextSibling is None, \
-                       'nextSibling in position %s should be None' % i
+                    'nextSibling in position %s should be None' % i
             else:
-                assert item.nextSibling is node[i+1], \
-                       'nextSibling in position %s is incorrect (%s)' % \
-                       (i, item.nextSibling)
+                assert item.nextSibling is node[i + 1], \
+                    'nextSibling in position %s is incorrect (%s)' % \
+                    (i, item.nextSibling)
 
         # Check previousSibling
         for i, item in enumerate(node):
             if i == 0:
                 assert item.previousSibling is None, \
-                       'previousSibling in position %s should be None' % i
+                    'previousSibling in position %s should be None' % i
             else:
-                assert item.previousSibling is node[i-1], \
-                       'previousSibling in position %s is incorrect (%s)' % \
-                       (i, item.previousSibling)
+                assert item.previousSibling is node[i - 1], \
+                    'previousSibling in position %s is incorrect (%s)' % \
+                    (i, item.previousSibling)
 
         # Check parentNode
         for i, item in enumerate(node):
             assert item.parentNode is node, \
-                   'parentNode in position %s is incorrect' % i
+                'parentNode in position %s is incorrect' % i
 
         # Check ownerDocument
         for i, item in enumerate(node):
             assert item.ownerDocument is node.ownerDocument, \
-                   'ownerDocument in position %s (%s) is incorrect: %s' % (i, item.ownerDocument, node.ownerDocument)
+                'ownerDocument in position %s (%s) is incorrect: %s' % (i, item.ownerDocument, node.ownerDocument)
 
         # Check attributes
         if node.attributes:
             for key, value in node.attributes.items():
                 if isinstance(value, Node):
                     assert value.parentNode is node, \
-                           'parentNode is incorrect (%s)' % value.parentNode
+                        'parentNode is incorrect (%s)' % value.parentNode
                     self._checkPositions(value)
 
                 elif isinstance(value, list):
                     for item in value:
                         assert getattr(item, 'parentNode', node) is node, \
-                               'parentNode is incorrect (%s)' % item.parentNode
+                            'parentNode is incorrect (%s)' % item.parentNode
                         self._checkPositions(item)
 
                 elif isinstance(value, dict):
                     for item in value.values():
                         assert getattr(item, 'parentNode', node) is node, \
-                               'parentNode is incorrect (%s)' % item.parentNode
+                            'parentNode is incorrect (%s)' % item.parentNode
                         self._checkPositions(item)
 
     def testConstructor(self):
@@ -78,32 +79,32 @@ class NodeTest(TestCase):
         two = doc.createElement('two')
         three = doc.createElement('three')
         node = doc.createElement('top')
-        node.extend([one,two,three])
-        expected = [one,two,three]
+        node.extend([one, two, three])
+        expected = [one, two, three]
         for i, item in enumerate(node):
             assert item is expected[i], '"%s" != "%s"' % (item, expected[i])
         self._checkPositions(node)
 
-#   def testAttributes(self):
-#       """ Set attributes on a node """
-#       doc = Document()
-#       one = doc.createElement('one')
-#       two = doc.createElement('two')
-#       three = doc.createTextNode('three')
-#       four = ['hi','bye',Text('text node')]
-#       node = Node()
-#       node.attributes['one'] = one
-#       one.attributes['two'] = two
-#       two.attributes['three'] = three 
-#       two.attributes['four'] = four 
-#       self._checkPositions(node)
+    #   def testAttributes(self):
+    #       """ Set attributes on a node """
+    #       doc = Document()
+    #       one = doc.createElement('one')
+    #       two = doc.createElement('two')
+    #       three = doc.createTextNode('three')
+    #       four = ['hi','bye',Text('text node')]
+    #       node = Node()
+    #       node.attributes['one'] = one
+    #       one.attributes['two'] = two
+    #       two.attributes['three'] = three
+    #       two.attributes['four'] = four
+    #       self._checkPositions(node)
 
     def testFirstChild(self):
         doc = Document()
         node = doc.createElement('node')
         one = doc.createElement('one')
         two = doc.createElement('two')
-        assert node.firstChild is None, '"%s" != None' % node.firstChild 
+        assert node.firstChild is None, '"%s" != None' % node.firstChild
         node.append(one)
         assert node.firstChild is one, '"%s" != "%s"' % (node.firstChild, one)
         node.insert(0, two)
@@ -115,7 +116,7 @@ class NodeTest(TestCase):
         node = doc.createElement('node')
         one = doc.createElement('one')
         two = doc.createElement('two')
-        assert node.lastChild is None, '"%s" != None' % node.lastChild 
+        assert node.lastChild is None, '"%s" != None' % node.lastChild
         node.append(one)
         assert node.lastChild is one, '"%s" != "%s"' % (node.lastChild, one)
         node.append(two)
@@ -176,7 +177,7 @@ class NodeTest(TestCase):
         node.attributes['three'] = three
         a = Text('a')
         b = Text('b')
-        node.attributes['four'] = {'a':a, 'b':1}
+        node.attributes['four'] = {'a': a, 'b': 1}
         node.attributes['five'] = [b, 1, 'c']
         assert node.ownerDocument is doc, '"%s" != "%s"' % (node.ownerDocument, doc)
         assert one.ownerDocument is doc, '"%s" != "%s"' % (one.ownerDocument, doc)
@@ -185,7 +186,6 @@ class NodeTest(TestCase):
         assert a.ownerDocument is doc, '"%s" != "%s"' % (a.ownerDocument, doc)
         assert b.ownerDocument is doc, '"%s" != "%s"' % (b.ownerDocument, doc)
         self._checkPositions(node)
-        
 
     def testCompareDocumentPosition(self):
         doc = Document()
@@ -314,7 +314,7 @@ class NodeTest(TestCase):
         node.insert(0, one)
         node.insert(1, two)
         node.insert(2, three)
-        expected = [one,two,three]
+        expected = [one, two, three]
         for i, item in enumerate(node):
             assert item is expected[i], '"%s" != "%s"' % (item, expected[i])
         self._checkPositions(node)
@@ -326,12 +326,12 @@ class NodeTest(TestCase):
         two = doc.createElement('two')
         three = doc.createElement('three')
         node = doc.createElement('top')
-        node.extend([one,two,three])
+        node.extend([one, two, three])
         i0 = doc.createElement('i0')
         i3 = doc.createTextNode('i3')
         node.insert(0, i0)
         node.insert(3, i3)
-        expected = [i0,one,two,i3,three]
+        expected = [i0, one, two, i3, three]
         for i, item in enumerate(node):
             assert item is expected[i], '"%s" != "%s"' % (item, expected[i])
         self._checkPositions(node)
@@ -349,14 +349,14 @@ class NodeTest(TestCase):
         frag = doc.createDocumentFragment()
         frag.appendChild(three)
         frag.appendChild(four)
-        node.insert(1,frag)
+        node.insert(1, frag)
 
         assert node[0] is one, '"%s" != "%s"' % (node[0], one)
         assert node[1] is three, '"%s" != "%s"' % (node[1], three)
         assert node[2] is four, '"%s" != "%s"' % (node[2], four)
         assert node[3] is two, '"%s" != "%s"' % (node[3], two)
         self._checkPositions(node)
-        
+
     def testSetItem(self):
         doc = Document()
         node = doc.createElement('node')
@@ -463,14 +463,14 @@ class NodeTest(TestCase):
         two = doc.createTextNode('two')
         three = doc.createTextNode('three')
         four = doc.createTextNode('four')
-        node.extend([one,two,three,four])
+        node.extend([one, two, three, four])
         node.normalize()
         assert len(node) == 2, '"%s" != "%s"' % (len(node), 2)
         assert node[1] == 'twothreefour', '"%s" != "%s"' % (node[1], 'twothreefour')
 
     def testIsSupported(self):
         pass
-   
+
     def testHasAttributes(self):
         doc = Document()
         node = doc.createElement('node')
@@ -534,4 +534,3 @@ class NodeTest(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

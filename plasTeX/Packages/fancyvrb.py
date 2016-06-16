@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from plasTeX import Command, Environment
 from plasTeX.Base.LaTeX.Verbatim import verbatim
+
 
 class Verbatim(verbatim):
     args = '[ options:dict ]'
@@ -33,18 +33,18 @@ class Verbatim(verbatim):
         # Frames
         if options.has_key('frame'):
             frame = options['frame'].strip()
-            if frame in ['leftline','single']:
+            if frame in ['leftline', 'single']:
                 self.style['border-left'] = '%s solid %s' % \
-                                             (framerule, rulecolor)
-            if frame in ['rightline','single']:
-                self.style['border-right'] = '%s solid %s' % \
-                                              (framerule, rulecolor)
-            if frame in ['topline','single','lines']:
-                self.style['border-top'] = '%s solid %s' % \
                                             (framerule, rulecolor)
-            if frame in ['bottomline','single','lines']:
+            if frame in ['rightline', 'single']:
+                self.style['border-right'] = '%s solid %s' % \
+                                             (framerule, rulecolor)
+            if frame in ['topline', 'single', 'lines']:
+                self.style['border-top'] = '%s solid %s' % \
+                                           (framerule, rulecolor)
+            if frame in ['bottomline', 'single', 'lines']:
                 self.style['border-bottom'] = '%s solid %s' % \
-                                               (framerule, rulecolor)
+                                              (framerule, rulecolor)
 
         # Padding 
         if options.has_key('framesep'):
@@ -91,8 +91,10 @@ class Verbatim(verbatim):
             gobble = int(options['gobble'])
             content = content.split('\n')
             for i in range(len(content)):
-                try: content[i] = content[i][gobble:] 
-                except: content[i] = ''
+                try:
+                    content[i] = content[i][gobble:]
+                except:
+                    content[i] = ''
             content = '\n'.join(content)
 
         # Command chars

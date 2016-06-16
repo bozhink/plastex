@@ -6,7 +6,7 @@ C.10.1 The tabbing Environment (p201)
 """
 
 from plasTeX import Command, Environment, DimenCommand
-from plasTeX.Logging import getLogger
+
 
 class tabbing(Environment):
     blockType = True
@@ -19,7 +19,7 @@ class tabbing(Environment):
 
     class EndRow(Command):
         macroName = '\\\\'
-   
+
     class kill(Command):
         pass
 
@@ -30,7 +30,7 @@ class tabbing(Environment):
         macroName = '-'
 
     class JumpBackTabStop(Command):
-        macroName = '<' 
+        macroName = '<'
 
     class LeftMargin(Command):
         macroName = "'"

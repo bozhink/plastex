@@ -2,7 +2,9 @@
 
 __version__ = '9.3'
 
-import string, re
+import re
+import string
+
 from DOM import Element, Text, Node, DocumentFragment, Document
 from Tokenizer import Token, BeginGroup, EndGroup, Other
 from plasTeX import Logging, encoding
@@ -10,6 +12,7 @@ from plasTeX import Logging, encoding
 log = Logging.getLogger()
 status = Logging.getLogger('status')
 deflog = Logging.getLogger('parse.definitions')
+
 
 #
 # Utility functions
@@ -21,7 +24,10 @@ def idgen():
     while 1:
         yield 'a%.10d' % i
         i += 1
+
+
 idgen = idgen()
+
 
 def subclasses(o):
     """ Return all subclasses of the given class """
@@ -30,7 +36,8 @@ def subclasses(o):
         output.extend(subclasses(item))
     return output
 
-def sourceChildren(o, par=True): 
+
+def sourceChildren(o, par=True):
     """ Return the LaTeX source of the child nodes """
     if o.hasChildNodes():
         if par:
@@ -42,25 +49,29 @@ def sourceChildren(o, par=True):
             return u''.join(source)
     return u''
 
-def sourceArguments(o): 
+
+def sourceArguments(o):
     """ Return the LaTeX source of the arguments """
     return o.argSource
 
-def ismacro(o): 
+
+def ismacro(o):
     """ Is the given object a macro? """
     return hasattr(o, 'macroName')
 
-def issection(o): 
+
+def issection(o):
     """ Is the given object a section? """
-    return o.level >= Node.DOCUMENT_LEVEL and o.level < Node.ENDSECTIONS_LEVEL 
+    return o.level >= Node.DOCUMENT_LEVEL and o.level < Node.ENDSECTIONS_LEVEL
+
 
 def macroName(o):
-     """ Return the macro name of the given object """
-     if o.macroName is None:
-         if type(o) is type:
-             return o.__name__
-         return type(o).__name__
-     return o.macroName
+    """ Return the macro name of the given object """
+    if o.macroName is None:
+        if type(o) is type:
+            return o.__name__
+        return type(o).__name__
+    return o.macroName
 
 
 class Argument(object):
@@ -72,6 +83,7 @@ class Argument(object):
     arguments thereafter.
 
     """
+
     def __init__(self, name, index, options={}):
         self.name = name
         self.index = index
@@ -89,6 +101,7 @@ class Argument(object):
 
 class CSSStyles(dict):
     """ CSS Style object """
+
     @property
     def inline(self):
         """ 
@@ -99,8 +112,8 @@ class CSSStyles(dict):
 
         """
         if not self:
-            return None      
-        return u'; '.join([u'%s:%s' % (x[0],x[1]) for x in self.items()])
+            return None
+        return u'; '.join([u'%s:%s' % (x[0], x[1]) for x in self.items()])
 
 
 class Macro(Element):
@@ -112,8 +125,8 @@ class Macro(Element):
     MODE_BEGIN = 1
     MODE_END = 2
 
-    macroName = None        # TeX macro name (instead of class name)
-    macroMode = MODE_NONE   # begin, end, or none
+    macroName = None  # TeX macro name (instead of class name)
+    macroMode = MODE_NONE  # begin, end, or none
     mathMode = None
 
     # Node variables
@@ -129,7 +142,7 @@ class Macro(Element):
 
     # Attributes that should be persisted between runs for nodes 
     # that can be referenced.  This allows for cross-document links.
-    refAttributes = ['macroName','ref','title','captionName','id','url']
+    refAttributes = ['macroName', 'ref', 'title', 'captionName', 'id', 'url']
 
     # Source of the TeX macro arguments
     argSource = ''
@@ -174,7 +187,7 @@ class Macro(Element):
         attrs -- dictionary of attributes to be set on self
 
         """
-        remap = {'url':'urloverride'}
+        remap = {'url': 'urloverride'}
         for key, value in attrs.items():
             setattr(self, remap.get(key, key), value)
 
@@ -194,18 +207,23 @@ class Macro(Element):
 
     def captionName():
         """ Name associated with the counter """
+
         def fget(self):
             if hasattr(self, '@captionName'):
                 return getattr(self, '@captionName')
             self.captionName = name = self.ownerDocument.createTextNode('')
             return name
+
         def fset(self, value):
             setattr(self, '@captionName', value)
+
         return locals()
+
     captionName = property(**captionName())
 
     def title():
         """ Retrieve title from variable or attributes dictionary """
+
         def fget(self):
             try:
                 return getattr(self, '@title')
@@ -215,13 +233,17 @@ class Macro(Element):
                 except KeyError:
                     pass
             raise AttributeError, 'could not find attribute "title"'
+
         def fset(self, value):
             setattr(self, '@title', value)
+
         return locals()
+
     title = property(**title())
 
     def fullTitle():
         """ Retrieve title including the section number """
+
         def fget(self):
             try:
                 return getattr(self, '@fullTitle')
@@ -233,13 +255,17 @@ class Macro(Element):
                     fullTitle = self.title
                 setattr(self, '@fullTitle', fullTitle)
                 return fullTitle
+
         def fset(self, value):
             setattr(self, '@fullTitle', value)
+
         return locals()
+
     fullTitle = property(**fullTitle())
 
     def tocEntry():
         """ Retrieve table of contents entry """
+
         def fget(self):
             try:
                 return getattr(self, '@tocEntry')
@@ -254,13 +280,17 @@ class Macro(Element):
                 except (KeyError, AttributeError):
                     pass
             return self.title
+
         def fset(self, value):
             setattr(self, '@tocEntry', value)
+
         return locals()
+
     tocEntry = property(**tocEntry())
 
     def fullTocEntry():
         """ Retrieve title including the section number """
+
         def fget(self):
             try:
                 try:
@@ -275,9 +305,12 @@ class Macro(Element):
                     return fullTocEntry
             except Exception, msg:
                 return self.title
+
         def fset(self, value):
             setattr(self, '@fullTocEntry', value)
+
         return locals()
+
     fullTocEntry = property(**fullTocEntry())
 
     @property
@@ -319,15 +352,18 @@ class Macro(Element):
                 setattr(self, '@id', value)
             else:
                 delattr(self, '@id')
+
         def fget(self):
             id = getattr(self, '@id', None)
-            if id is None: 
+            if id is None:
                 for id in idgen:
                     setattr(self, '@hasgenid', True)
                     self.id = id
                     break
             return id
+
         return locals()
+
     id = property(**id())
 
     def expand(self, tex):
@@ -342,8 +378,8 @@ class Macro(Element):
         if self.macroMode == Macro.MODE_END:
             self.ownerDocument.context.pop(self)
             # If a unicode value is set, just return that
-#           if self.unicode is not None:
-#               return tex.textTokens(self.unicode)
+            #           if self.unicode is not None:
+            #               return tex.textTokens(self.unicode)
             return
 
         # If this is a \begin token or the element needs to be
@@ -353,8 +389,8 @@ class Macro(Element):
             self.ownerDocument.context.push(self)
             self.parse(tex)
             # If a unicode value is set, just return that
-#           if self.unicode is not None:
-#               return tex.textTokens(self.unicode)
+            #           if self.unicode is not None:
+            #               return tex.textTokens(self.unicode)
             self.setLinkType()
             return
 
@@ -367,8 +403,8 @@ class Macro(Element):
         self.ownerDocument.context.pop(self)
 
         # If a unicode value is set, just return that
-#       if self.unicode is not None:
-#           return tex.textTokens(self.unicode)
+        #       if self.unicode is not None:
+        #           return tex.textTokens(self.unicode)
 
         self.setLinkType()
 
@@ -399,6 +435,7 @@ class Macro(Element):
         if t.macroName is None:
             return t.__name__
         return t.macroName
+
     nodeName = tagName
 
     @property
@@ -415,7 +452,7 @@ class Macro(Element):
         # If self.childNodes is not empty, print out the entire environment
         if self.macroMode == Macro.MODE_BEGIN:
             argSource = sourceArguments(self)
-            if not argSource: 
+            if not argSource:
                 argSource = ' '
             s = '%sbegin{%s}%s' % (escape, name, argSource)
             if self.hasChildNodes():
@@ -445,7 +482,7 @@ class Macro(Element):
     def childrenSource(self):
         return sourceChildren(self)
 
-    def parse(self, tex): 
+    def parse(self, tex):
         """ 
         Parse the arguments defined in the `args` variable 
 
@@ -471,16 +508,16 @@ class Macro(Element):
         try:
             for arg in self.arguments:
                 self.preArgument(arg, tex)
-                output, source = tex.readArgumentAndSource(parentNode=self, 
-                                                           name=arg.name, 
+                output, source = tex.readArgumentAndSource(parentNode=self,
+                                                           name=arg.name,
                                                            **arg.options)
                 self.argSource += source
                 self.attributes[arg.name] = output
                 self.postArgument(arg, output, tex)
         except:
             raise
-            log.error('Error while parsing argument "%s" of "%s"' % 
-                       (arg.name, self.nodeName))
+            log.error('Error while parsing argument "%s" of "%s"' %
+                      (arg.name, self.nodeName))
 
         self.postParse(tex)
 
@@ -523,7 +560,7 @@ class Macro(Element):
             including the argument's name, source, and options.
         tex -- the TeX instance containing the current context 
 
-        """      
+        """
         # If there was a '*', unset the counter for this instance
         if arg.index == 0 and arg.name == '*modifier*':
             if value:
@@ -543,7 +580,7 @@ class Macro(Element):
                 self.ownerDocument.context.counters[self.counter].stepcounter()
             except KeyError:
                 log.warning('Could not find counter "%s"', self.counter)
-                self.ownerDocument.context.newcounter(self.counter,initial=1)
+                self.ownerDocument.context.newcounter(self.counter, initial=1)
 
     def refstepcounter(self, tex):
         """
@@ -569,11 +606,13 @@ class Macro(Element):
 
         """
         if self.counter:
-            try: secnumdepth = self.config['document']['sec-num-depth']
-            except: secnumdepth = 10
+            try:
+                secnumdepth = self.config['document']['sec-num-depth']
+            except:
+                secnumdepth = 10
             if secnumdepth >= self.level or self.level > self.ENDSECTIONS_LEVEL:
-                self.ref = self.ownerDocument.createElement('the'+self.counter).expand(tex)
-                self.captionName = self.ownerDocument.createElement(self.counter+'name').expand(tex)
+                self.ref = self.ownerDocument.createElement('the' + self.counter).expand(tex)
+                self.captionName = self.ownerDocument.createElement(self.counter + 'name').expand(tex)
 
     @property
     def arguments(self):
@@ -596,11 +635,11 @@ class Macro(Element):
             return getattr(tself, '@arguments')
 
         # Split the arguments into their primary components
-        args = iter([x.strip() for x in 
-                     re.split(r'(\w+(?::\w+(?:\(\S\))?(?::\w+)?)?|\W|\s+)', 
+        args = iter([x.strip() for x in
+                     re.split(r'(\w+(?::\w+(?:\(\S\))?(?::\w+)?)?|\W|\s+)',
                               tself.args) if x is not None and x.strip()])
 
-        groupings = {'[':'[]','(':'()','<':'<>','{':'{}'}
+        groupings = {'[': '[]', '(': '()', '<': '<>', '{': '{}'}
 
         macroargs = []
         argdict = {}
@@ -614,13 +653,13 @@ class Macro(Element):
                         'Improperly placed "%s" in argument string "%s"' % \
                         (item, tself.args)
                 argdict.clear()
-                macroargs.append(Argument('*modifier*', index, {'spec':item}))
+                macroargs.append(Argument('*modifier*', index, {'spec': item}))
                 index += 1
 
             # Optional equals
             elif item in '=':
                 argdict.clear()
-                macroargs.append(Argument('*equals*', index, {'spec':item}))
+                macroargs.append(Argument('*equals*', index, {'spec': item}))
                 index += 1
 
             # Beginning of group
@@ -637,7 +676,7 @@ class Macro(Element):
                 parts = item.split(':')
                 item = parts.pop(0)
                 # Parse for types and subtypes
-                if parts: 
+                if parts:
                     # We already have a type, so check for subtypes
                     # for list items
                     if argdict.has_key('type'):
@@ -648,7 +687,7 @@ class Macro(Element):
                         if parts:
                             argdict['subtype'] = parts.pop(0)
                 # Arguments that are instance variables are always expanded
-                if argdict.get('type') in ['cs','nox']:
+                if argdict.get('type') in ['cs', 'nox']:
                     argdict['expanded'] = False
                 else:
                     argdict['expanded'] = True
@@ -713,7 +752,7 @@ class Macro(Element):
                 return node
             node = node.parentNode
         return
-        
+
     def paragraphs(self, force=True):
         """
         Group content into paragraphs
@@ -773,7 +812,7 @@ class Macro(Element):
             self.insert(i, item)
 
         # Filter out any empty paragraphs
-        for i in range(len(self)-1, -1, -1):
+        for i in range(len(self) - 1, -1, -1):
             item = self[i]
             if item.level == Node.PAR_LEVEL:
                 if len(item) == 0:
@@ -781,11 +820,14 @@ class Macro(Element):
                 elif len(item) == 1 and item[0].isElementContentWhitespace:
                     self.pop(i)
 
+
 class TeXFragment(DocumentFragment):
     """ Document fragment node """
+
     @property
     def source(self):
         return sourceChildren(self)
+
 
 class TeXDocument(Document):
     """ TeX Document node """
@@ -797,22 +839,22 @@ class TeXDocument(Document):
         ("''", unichr(8221)),
         ('"`', unichr(8222)),
         ('"\'', unichr(8220)),
-        ('`',  unichr(8216)),
-        ("'",  unichr(8217)),
-        ('---',unichr(8212)),
+        ('`', unichr(8216)),
+        ("'", unichr(8217)),
+        ('---', unichr(8212)),
         ('--', unichr(8211)),
-#       ('fj', unichr(58290)),
-#       ('ff', unichr(64256)),
-#       ('fi', unichr(64257)),
-#       ('fl', unichr(64258)),
-#       ('ffi',unichr(64259)),
-#       ('ffl',unichr(64260)),
-#       ('ij', unichr(307)),
-#       ('IJ', unichr(308)),
+        #       ('fj', unichr(58290)),
+        #       ('ff', unichr(64256)),
+        #       ('fi', unichr(64257)),
+        #       ('fl', unichr(64258)),
+        #       ('ffi',unichr(64259)),
+        #       ('ffl',unichr(64260)),
+        #       ('ij', unichr(307)),
+        #       ('IJ', unichr(308)),
     ]
 
     def __init__(self, *args, **kwargs):
-        #super(TeXDocument, self).__init__(*args, **kwargs)
+        # super(TeXDocument, self).__init__(*args, **kwargs)
 
         if 'context' not in kwargs:
             import Context
@@ -851,10 +893,12 @@ class TeXDocument(Document):
         """ Return the LaTeX source of the document """
         return sourceChildren(self)
 
-class Command(Macro): 
+
+class Command(Macro):
     """ Base class for all Python-based LaTeX commands """
 
-class Environment(Macro): 
+
+class Environment(Macro):
     """ Base class for all Python-based LaTeX environments """
     level = Node.ENVIRONMENT_LEVEL
 
@@ -881,9 +925,9 @@ class Environment(Macro):
             return
         # Absorb the tokens that belong to us
         dopars = self.forcePars
-#       print 'DIGEST', type(self), self.contextDepth
+        #       print 'DIGEST', type(self), self.contextDepth
         for item in tokens:
-#           print type(item), (item.level, self.level), (item.contextDepth, self.contextDepth)
+            #           print type(item), (item.level, self.level), (item.contextDepth, self.contextDepth)
             # Make sure that we know to group paragraphs if one is found
             if item.level == Node.PAR_LEVEL:
                 self.appendChild(item)
@@ -901,14 +945,15 @@ class Environment(Macro):
                 item.digest(tokens)
             # Stay within our context depth
             if self.level > Node.DOCUMENT_LEVEL and \
-               item.contextDepth < self.contextDepth:
+                            item.contextDepth < self.contextDepth:
                 tokens.push(item)
                 break
-#           print 'APPEND', type(item)
+            # print 'APPEND', type(item)
             self.appendChild(item)
-#       print 'DONE', type(self)
+        # print 'DONE', type(self)
         if dopars:
             self.paragraphs()
+
 
 class IgnoreCommand(Command):
     """
@@ -919,9 +964,11 @@ class IgnoreCommand(Command):
     be missing from that.
 
     """
+
     def invoke(self, tex):
         Command.invoke(self, tex)
         return []
+
 
 class UnrecognizedMacro(Macro):
     """
@@ -931,14 +978,16 @@ class UnrecognizedMacro(Macro):
     class is generated as a placeholder for the missing macro.
 
     """
+
     def __cmp__(self, other):
         if not hasattr(other, 'nodeName'):
             return 0
-        if other.nodeName in ['undefined','@undefined']:
+        if other.nodeName in ['undefined', '@undefined']:
             return 0
         if isinstance(other, UnrecognizedMacro):
             return 0
         return super(UnrecognizedMacro, self).__cmp__(other)
+
 
 class NewIf(Macro):
     """ Base class for all generated \\newifs """
@@ -961,17 +1010,22 @@ class NewIf(Macro):
     def setFalse(cls):
         cls.state = False
 
+
 class IfTrue(Macro):
     """ Base class for all generated \\iftrues """
+
     def invoke(self, tex):
         type(self).ifclass.setTrue()
         return []
 
+
 class IfFalse(Macro):
     """ Base class for all generated \\iffalses """
+
     def invoke(self, tex):
         type(self).ifclass.setFalse()
         return []
+
 
 def expandDef(definition, params):
     # Walk through the definition and expand parameters
@@ -1006,6 +1060,7 @@ def expandDef(definition, params):
         previous = t
     return output
 
+
 class NewCommand(Macro):
     """ Superclass for all \newcommand/\newenvironment type commands """
     nargs = 0
@@ -1014,7 +1069,7 @@ class NewCommand(Macro):
 
     def invoke(self, tex):
         if self.macroMode == Macro.MODE_END:
-            res = self.ownerDocument.createElement('end'+self.tagName).invoke(tex)
+            res = self.ownerDocument.createElement('end' + self.tagName).invoke(tex)
             if res is None:
                 return [res, EndGroup(' ')]
             return res + [EndGroup(' ')]
@@ -1025,13 +1080,13 @@ class NewCommand(Macro):
         nargs = self.nargs
         if self.opt is not None:
             nargs -= 1
-            params.append(tex.readArgument('[]', default=self.opt, 
-                                           parentNode=self, 
+            params.append(tex.readArgument('[]', default=self.opt,
+                                           parentNode=self,
                                            name='#%s' % len(params)))
 
         # Get mandatory arguments
         for i in range(nargs):
-            params.append(tex.readArgument(parentNode=self, 
+            params.append(tex.readArgument(parentNode=self,
                                            name='#%s' % len(params)))
 
         deflog.debug2('expanding %s %s', self.definition, params)
@@ -1039,8 +1094,9 @@ class NewCommand(Macro):
         output = []
         if self.macroMode == Macro.MODE_BEGIN:
             output.append(BeginGroup(' '))
-            
+
         return output + expandDef(self.definition, params)
+
 
 class Definition(Macro):
     """ Superclass for all \\def-type commands """
@@ -1058,7 +1114,7 @@ class Definition(Macro):
 
             # Beginning a new parameter
             if a.catcode == Token.CC_PARAMETER:
-                
+
                 # Adjacent parameters, just get the next token
                 if inparam:
                     params.append(tex.readArgument(parentNode=self,
@@ -1072,7 +1128,7 @@ class Definition(Macro):
 
                     elif a.catcode == Token.CC_PARAMETER:
                         continue
-                    
+
                     # Handle #{ case here
                     elif a.catcode == Token.CC_BGROUP:
                         param = []
@@ -1086,7 +1142,7 @@ class Definition(Macro):
 
                     else:
                         raise ValueError, \
-                              'Invalid arg string: %s' % ''.join(self.args)
+                            'Invalid arg string: %s' % ''.join(self.args)
                     break
 
             # In a parameter, so get everything up to a token that matches `a`
@@ -1106,11 +1162,12 @@ class Definition(Macro):
                     if t == a:
                         break
                     else:
-                        log.info('Arguments of "%s" don\'t match definition. Got "%s" but was expecting "%s" (%s).' % (name, t, a, ''.join(self.args)))
+                        log.info('Arguments of "%s" don\'t match definition. Got "%s" but was expecting "%s" (%s).' % (
+                            name, t, a, ''.join(self.args)))
                         break
 
         if inparam:
-            params.append(tex.readArgument(parentNode=self, 
+            params.append(tex.readArgument(parentNode=self,
                                            name='#%s' % len(params)))
 
         deflog.debug2('expanding %s %s', self.definition, params)
@@ -1120,6 +1177,7 @@ class Definition(Macro):
 
 class number(int):
     """ Class used for parameter and count values """
+
     def __new__(cls, v):
         if isinstance(v, Macro):
             return v.__count__()
@@ -1129,12 +1187,14 @@ class number(int):
     def source(self):
         return unicode(self)
 
+
 class count(number): pass
+
 
 class dimen(float):
     """ Class used for dimen values """
 
-    units = ['pt','pc','in','bp','cm','mm','dd','cc','sp','ex','em']
+    units = ['pt', 'pc', 'in', 'bp', 'cm', 'mm', 'dd', 'cc', 'sp', 'ex', 'em']
 
     def __new__(cls, v):
         if isinstance(v, Macro):
@@ -1146,7 +1206,7 @@ class dimen(float):
             while v and v[-1] in encoding.stringletters():
                 units.insert(0, v.pop())
             v = float(''.join(v))
-            units = ''.join(units) 
+            units = ''.join(units)
             if units == 'pt':
                 v *= 65536
             elif units == 'pc':
@@ -1167,14 +1227,20 @@ class dimen(float):
                 pass
             # Encode fil(ll)s by adding 2, 4, and 6 billion
             elif units == 'fil':
-                if v < 0: v -= 2e9
-                else: v += 2e9
+                if v < 0:
+                    v -= 2e9
+                else:
+                    v += 2e9
             elif units == 'fill':
-                if v < 0: v -= 4e9
-                else: v += 4e9
+                if v < 0:
+                    v -= 4e9
+                else:
+                    v += 4e9
             elif units == 'filll':
-                if v < 0: v -= 6e9
-                else: v += 6e9
+                if v < 0:
+                    v -= 6e9
+                else:
+                    v += 6e9
             elif units == 'mu':
                 pass
             # Just estimates, since I don't know the actual font size
@@ -1192,66 +1258,77 @@ class dimen(float):
         if self < 0:
             sign = -1
         if abs(self) >= 6e9:
-            return unicode(sign * (abs(self)-6e9)) + 'filll'
+            return unicode(sign * (abs(self) - 6e9)) + 'filll'
         if abs(self) >= 4e9:
-            return unicode(sign * (abs(self)-4e9)) + 'fill'
+            return unicode(sign * (abs(self) - 4e9)) + 'fill'
         if abs(self) >= 2e9:
-            return unicode(sign * (abs(self)-2e9)) + 'fil'
+            return unicode(sign * (abs(self) - 2e9)) + 'fil'
         return '%spt' % self.pt
 
     @property
-    def pt(self): 
+    def pt(self):
         return self / 65536
+
     point = pt
 
     @property
-    def pc(self): 
+    def pc(self):
         return self / (12 * 65536)
+
     pica = pc
 
     @property
-    def _in(self): 
+    def _in(self):
         return self / (72.27 * 65536)
+
     inch = _in
 
     @property
-    def bp(self): 
+    def bp(self):
         return self / ((72.27 * 65536) / 72)
+
     bigpoint = bp
 
     @property
-    def cm(self): 
+    def cm(self):
         return self / ((72.27 * 65536) / 2.54)
+
     centimeter = cm
 
     @property
-    def mm(self): 
+    def mm(self):
         return self / ((72.27 * 65536) / 25.4)
+
     millimeter = mm
 
     @property
-    def dd(self): 
+    def dd(self):
         return self / ((1238 * 65536) / 1157)
+
     didotpoint = dd
 
     @property
-    def cc(self): 
+    def cc(self):
         return self / ((1238 * 12 * 65536) / 1157)
+
     cicero = cc
 
     @property
-    def sp(self): 
+    def sp(self):
         return self
+
     scaledpoint = sp
 
     @property
-    def ex(self): 
+    def ex(self):
         return self / (5 * 65536)
+
     xheight = ex
 
     @property
-    def em(self): 
+    def em(self):
         return self / (11 * 65536)
+
     mwidth = em
 
     @property
@@ -1260,12 +1337,13 @@ class dimen(float):
         if self < 0:
             sign = -1
         if abs(self) >= 6e9:
-            return sign * (abs(self)-6e9)
+            return sign * (abs(self) - 6e9)
         if abs(self) >= 4e9:
-            return sign * (abs(self)-4e9)
+            return sign * (abs(self) - 4e9)
         if abs(self) >= 2e9:
-            return sign * (abs(self)-2e9)
+            return sign * (abs(self) - 2e9)
         raise ValueError, 'This is not a fil(ll) dimension'
+
     fil = filll = fill
 
     def __repr__(self):
@@ -1274,17 +1352,20 @@ class dimen(float):
     def __str__(self):
         return self.source
 
+
 class mudimen(dimen):
     """ Class used for mudimen values """
     units = ['mu']
 
+
 class glue(dimen):
     """ Class used for glue values """
+
     def __new__(cls, g, plus=None, minus=None):
         return dimen.__new__(cls, g)
-        
+
     def __init__(self, g, plus=None, minus=None):
-        #super(glue, self).__init__(g)
+        # super(glue, self).__init__(g)
         self.stretch = self.shrink = None
         if plus is not None:
             self.stretch = dimen(plus)
@@ -1302,7 +1383,8 @@ class glue(dimen):
             s.append(self.shrink.source)
         return ' '.join(s)
 
-class muglue(glue): 
+
+class muglue(glue):
     """ Class used for muglue values """
     units = ['mu']
 
@@ -1313,7 +1395,7 @@ class ParameterCommand(Command):
 
     enabled = True
     _enablelevel = 0
-    
+
     def invoke(self, tex):
         if ParameterCommand.enabled:
             # Disable invoke() in parameters nested in our arguments.
@@ -1325,12 +1407,12 @@ class ParameterCommand(Command):
     @classmethod
     def enable(cls):
         ParameterCommand._enablelevel += 1
-        ParameterCommand.enabled = ParameterCommand._enablelevel >= 0 
+        ParameterCommand.enabled = ParameterCommand._enablelevel >= 0
 
     @classmethod
     def disable(cls):
         ParameterCommand._enablelevel -= 1
-        ParameterCommand.enabled = ParameterCommand._enablelevel >= 0 
+        ParameterCommand.enabled = ParameterCommand._enablelevel >= 0
 
     def __dimen__(self):
         return dimen(type(self).value)
@@ -1343,7 +1425,7 @@ class ParameterCommand(Command):
 
     def __glue__(self):
         return glue(type(self).value)
-    
+
     def __muglue__(self):
         return muglue(type(self).value)
 
@@ -1354,9 +1436,12 @@ class ParameterCommand(Command):
     def new(cls, *args, **kwargs):
         return count(*args, **kwargs)
 
+
 class RegisterCommand(ParameterCommand): pass
 
+
 class CountCommand(RegisterCommand): pass
+
 
 class DimenCommand(RegisterCommand):
     args = '= value:Dimen'
@@ -1372,6 +1457,7 @@ class DimenCommand(RegisterCommand):
     def new(cls, *args, **kwargs):
         return dimen(*args, **kwargs)
 
+
 class MuDimenCommand(RegisterCommand):
     args = '= value:MuDimen'
     value = mudimen(0)
@@ -1386,6 +1472,7 @@ class MuDimenCommand(RegisterCommand):
     def new(cls, *args, **kwargs):
         return mudimen(*args, **kwargs)
 
+
 class GlueCommand(RegisterCommand):
     args = '= value:Glue'
     value = glue(0)
@@ -1399,6 +1486,7 @@ class GlueCommand(RegisterCommand):
     @classmethod
     def new(cls, *args, **kwargs):
         return glue(*args, **kwargs)
+
 
 class MuGlueCommand(RegisterCommand):
     args = '= value:MuGlue'
@@ -1420,6 +1508,7 @@ class Counter(object):
     LaTeX counter class
 
     """
+
     def __init__(self, context, name, resetby=None, value=0):
         self.name = name
         self.resetby = resetby
@@ -1440,7 +1529,7 @@ class Counter(object):
 
     def resetcounters(self):
         for counter in self.counters.values():
-            if counter.resetby and self.name and counter.resetby == self.name: 
+            if counter.resetby and self.name and counter.resetby == self.name:
                 counter.value = 0
                 counter.resetcounters()
 
@@ -1458,7 +1547,7 @@ class Counter(object):
     def Roman(self):
         roman = ""
         n, number = divmod(self.value, 1000)
-        roman = "M"*n
+        roman = "M" * n
         if number >= 900:
             roman = roman + "CM"
             number = number - 900
@@ -1503,7 +1592,7 @@ class Counter(object):
 
     @property
     def Alph(self):
-        return encoding.stringletters()[self.value-1].upper()
+        return encoding.stringletters()[self.value - 1].upper()
 
     @property
     def alph(self):

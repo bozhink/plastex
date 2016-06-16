@@ -5,9 +5,10 @@ C.6.4 Verbatim
 
 """
 
-from plasTeX import Macro, Environment, Command, sourceArguments, sourceChildren
-from plasTeX.Base.TeX.Text import bgroup, egroup
+from plasTeX import Environment, Command, sourceArguments, sourceChildren
+from plasTeX.Base.TeX.Text import bgroup
 from plasTeX.Tokenizer import Other
+
 
 class verbatim(Environment):
     blockType = True
@@ -80,6 +81,7 @@ class verbatim(Environment):
         """ Normalize, but don't allow character substitutions """
         return Environment.normalize(self)
 
+
 class endverbatim(verbatim):
     def invoke(self, tex):
         end = self.ownerDocument.createElement(self.nodeName[3:])
@@ -87,11 +89,14 @@ class endverbatim(verbatim):
         end.macroMode = Environment.MODE_END
         return [end]
 
+
 class VerbatimStar(verbatim):
     macroName = 'verbatim*'
 
+
 class EndVerbatimStar(endverbatim):
     macroName = 'endverbatim*'
+
 
 class verb(Command):
     args = '*'
@@ -127,10 +132,9 @@ class verb(Command):
     @property
     def source(self):
         return '\\%s%s%s%s%s' % (self.nodeName, sourceArguments(self),
-                                 self.delimiter, sourceChildren(self), 
+                                 self.delimiter, sourceChildren(self),
                                  self.delimiter)
 
     def normalize(self, charsubs=[]):
         """ Normalize, but don't allow character substitutions """
         return Command.normalize(self)
-

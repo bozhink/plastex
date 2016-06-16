@@ -2,10 +2,11 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.DOM import *
 
-class TextTest(TestCase):
 
+class TextTest(TestCase):
     def testIsElementContentWhitespace(self):
         doc = Document()
         one = doc.createTextNode('one')
@@ -25,4 +26,3 @@ class TextTest(TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

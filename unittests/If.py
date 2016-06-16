@@ -2,12 +2,11 @@
 
 import unittest
 from unittest import TestCase
+
 from plasTeX.TeX import TeX
-from plasTeX import Macro
 
 
 class TestIfs(TestCase):
-
     def testTrue(self):
         s = TeX()
         s.input(r'\newif\iffoo\footrue\iffoo hi\else bye\fi')
@@ -162,6 +161,6 @@ class TestIfs(TestCase):
         expected = []
         assert output == expected, '"%s" != "%s"' % (output, expected)
 
+
 if __name__ == '__main__':
     unittest.main()
-

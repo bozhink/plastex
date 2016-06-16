@@ -6,24 +6,26 @@ C.14.1 The picture Environment (p219)
 """
 
 from plasTeX import Command, Environment, DimenCommand
-from plasTeX.Logging import getLogger
+
 
 class qbeziermax(Command):
     unicode = '250'
 
+
 class unitlength(DimenCommand):
     value = DimenCommand.new('1pt')
+
 
 class picture(Environment):
     args = '( dimension:str ) ( offset:str )'
     blockType = True
     captionable = True
 
-#   def digest(self, tex):
-#       result = Environment.digest(self, tex)
-#       import pdb
-#       pdb.set_trace()
-#       return result
+    #   def digest(self, tex):
+    #       result = Environment.digest(self, tex)
+    #       import pdb
+    #       pdb.set_trace()
+    #       return result
 
     def paragraphs(self):
         pass
@@ -62,7 +64,7 @@ class picture(Environment):
         args = '* diam'
 
     class oval(Command):
-        args = '[ radius:str ] ( dimen:str ) [ part:str ]' 
+        args = '[ radius:str ] ( dimen:str ) [ part:str ]'
 
     class frame(Command):
         args = 'object'
@@ -78,4 +80,3 @@ class picture(Environment):
 
     class linethickness(Command):
         args = 'len:dimen'
-    

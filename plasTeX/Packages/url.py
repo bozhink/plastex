@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 
 import new
-from plasTeX.Base import Command, verb
+
+from plasTeX.Base import Command
+
 
 class url(Command):
     args = 'url:url'
+
 
 class urldef(Command):
     args = 'name:cs type:cs'
 
     class DefinedURL(Command):
         result = None
+
         def invoke(self, tex):
             return self.result
 
@@ -23,13 +27,16 @@ class urldef(Command):
         obj.parentNode = self.parentNode
         obj.ownerDocument = self.ownerDocument
         result = obj.invoke(tex)
-        c.addGlobal(name, new.classobj(name, (self.DefinedURL,), {'result':result}))
+        c.addGlobal(name, new.classobj(name, (self.DefinedURL,), {'result': result}))
+
 
 class urlstyle(Command):
     args = 'style:str'
 
+
 class DeclareUrlCommand(Command):
     args = 'name:cs style'
+
     def invoke(self, tex):
         Command.invoke(self, tex)
         name = str(self.attributes['name'])
